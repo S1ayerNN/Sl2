@@ -1,20 +1,19 @@
 """Horoscope API endpoints.
 
-Users have NO text input for AI prompts. They can only:
-- Select horoscope type: general, focused (by predefined interest), regeneration
-- Optionally target a family member
-- View history and submit feedback
+IDOR protection: all family_member_id references are validated for ownership.
+Users have NO text input for AI prompts.
 """
 
 from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.user import User
+from app.models.user import User, FamilyMember
 from app.schemas.horoscope import (
     HoroscopeFeedbackRequest,
     HoroscopeGenerateRequest,
@@ -31,6 +30,37 @@ from app.services.tier_config import get_tier_config
 
 router = APIRouter(prefix="/horoscope", tags=["Horoscope"])
 
+VALID_HOROSCOPE_TYPES = {"general", "focused", "regeneration"}
+
+
+async def _validate_family_member_ownership(
+    family_member_id: str | None,
+    current_user: User,
+    db: AsyncSession,
+) -> UUID | None:
+    """Validate and return family_member UUID, ensuring it belongs to current user.
+
+    IDOR protection: prevents accessing another user's family members.
+    """
+    if not family_member_id:
+        return None
+
+    try:
+        fm_uuid = UUID(family_member_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid family member ID format")
+
+    # Verify ownership
+    result = await db.execute(
+        select(FamilyMember.id)
+        .where(FamilyMember.id == fm_uuid)
+        .where(FamilyMember.owner_id == current_user.id)
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Family member not found")
+
+    return fm_uuid
+
 
 @router.post("/generate", response_model=HoroscopeResponse)
 async def generate_horoscope(
@@ -42,10 +72,8 @@ async def generate_horoscope(
 
     Types:
     - "general": standard daily horoscope (free: ad required)
-    - "focused": horoscope focused on a specific interest (Plus/Premium only)
-    - "regeneration": re-generate a horoscope you didn't like (Plus/Premium only)
-
-    User has NO text input - everything is from profile and predefined selections.
+    - "focused": focused on a specific interest (Plus/Premium)
+    - "regeneration": re-generate (Plus/Premium)
     """
     target_date = None
     family_member_id = None
@@ -59,14 +87,16 @@ async def generate_horoscope(
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
 
-        if request.family_member_id:
-            try:
-                family_member_id = UUID(request.family_member_id)
-            except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid family member ID")
+        # IDOR check: validate family member ownership
+        family_member_id = await _validate_family_member_ownership(
+            request.family_member_id, current_user, db
+        )
 
-        if request.horoscope_type not in ("general", "focused", "regeneration"):
-            raise HTTPException(status_code=400, detail="Type must be: general, focused, regeneration")
+        if request.horoscope_type not in VALID_HOROSCOPE_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Type must be one of: {', '.join(VALID_HOROSCOPE_TYPES)}",
+            )
         horoscope_type = request.horoscope_type
         focus_interest_id = request.focus_interest_id
 
@@ -99,7 +129,14 @@ async def get_today(
     db: AsyncSession = Depends(get_db),
 ):
     """Get today's horoscope if already generated."""
-    fm_id = UUID(family_member_id) if family_member_id else None
+    # IDOR check
+    fm_id = await _validate_family_member_ownership(
+        family_member_id, current_user, db
+    )
+
+    if horoscope_type not in VALID_HOROSCOPE_TYPES:
+        raise HTTPException(status_code=400, detail="Invalid horoscope type")
+
     horoscope = await get_todays_horoscope(
         current_user, db, family_member_id=fm_id, horoscope_type=horoscope_type
     )
@@ -115,8 +152,12 @@ async def get_history(
     db: AsyncSession = Depends(get_db),
 ):
     """Get last N horoscopes (depth depends on tier)."""
+    # IDOR check
+    fm_id = await _validate_family_member_ownership(
+        family_member_id, current_user, db
+    )
+
     tier = get_tier_config(current_user.subscription_tier)
-    fm_id = UUID(family_member_id) if family_member_id else None
     history = await get_user_history(
         current_user.id, db, limit=tier.history_in_prompt, family_member_id=fm_id
     )
@@ -133,7 +174,10 @@ async def feedback(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Submit feedback (like/dislike) for a horoscope."""
+    """Submit feedback (like/dislike) for a horoscope.
+
+    IDOR protected: horoscope must belong to current user.
+    """
     try:
         horoscope = await submit_feedback(
             horoscope_id=horoscope_id,
@@ -150,10 +194,7 @@ async def feedback(
 async def get_my_limits(
     current_user: User = Depends(get_current_user),
 ):
-    """Get current user's daily limits and remaining quota.
-
-    Useful for frontend to show remaining horoscopes.
-    """
+    """Get current user's daily limits and tier info."""
     tier = get_tier_config(current_user.subscription_tier)
     return {
         "tier": tier.tier_id,
