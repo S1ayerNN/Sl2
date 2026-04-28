@@ -11,9 +11,10 @@ class HoroscopeResponse(BaseModel):
     horoscope_date: date
     horoscope_text: str
     ai_model_used: str
+    horoscope_type: str = "general"
+    focus_interest_id: Optional[str] = None
     feedback: Optional[str] = None
     safety_passed: bool = True
-    # If for a family member
     family_member_id: Optional[UUID] = None
     created_at: datetime
 
@@ -23,10 +24,14 @@ class HoroscopeResponse(BaseModel):
 class HoroscopeGenerateRequest(BaseModel):
     """Request to generate a new horoscope.
 
-    User has NO text input fields. Only optional date and family_member_id.
+    User has NO text input fields. Only predefined selections.
     """
     target_date: Optional[str] = None  # ISO format, defaults to today
     family_member_id: Optional[str] = None  # UUID of family member, or None for self
+    # Horoscope type: "general" (default), "focused", "regeneration"
+    horoscope_type: str = "general"
+    # For type="focused": interest ID from catalog (e.g. "love", "career")
+    focus_interest_id: Optional[str] = None
 
 
 class HoroscopeFeedbackRequest(BaseModel):

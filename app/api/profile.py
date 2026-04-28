@@ -28,6 +28,7 @@ from app.services.interest_catalog import (
     get_catalog_for_api,
     validate_interest_ids,
 )
+from app.services.tier_config import get_all_tiers_for_api, get_tier_config
 from app.services.zodiac_service import get_zodiac_sign
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
@@ -50,10 +51,7 @@ def _user_to_profile(user: User) -> UserProfile:
         subscription_expires=user.subscription_expires,
         is_premium=user.is_premium,
         family_members_count=len(user.family_members) if user.family_members else 0,
-        family_members_limit=(
-            settings.FAMILY_MEMBERS_LIMIT_PREMIUM if user.is_premium
-            else settings.FAMILY_MEMBERS_LIMIT_FREE
-        ),
+        family_members_limit=get_tier_config(user.subscription_tier).family_members_limit,
         profile_completeness=user.profile_completeness,
         created_at=user.created_at,
     )
@@ -219,10 +217,8 @@ async def add_family_member(
     Free users: 0 members allowed (only self)
     Premium users: up to 5 members
     """
-    limit = (
-        settings.FAMILY_MEMBERS_LIMIT_PREMIUM if current_user.is_premium
-        else settings.FAMILY_MEMBERS_LIMIT_FREE
-    )
+    tier = get_tier_config(current_user.subscription_tier)
+    limit = tier.family_members_limit
     current_count = len(current_user.family_members) if current_user.family_members else 0
 
     if current_count >= limit:
@@ -301,3 +297,15 @@ async def delete_family_member(
         raise HTTPException(status_code=404, detail="Family member not found")
     await db.delete(member)
     await db.flush()
+
+
+# --- Subscription Tiers ---
+
+
+@router.get("/tiers")
+async def get_subscription_tiers():
+    """Get all subscription tiers with features and pricing.
+
+    Use this to display the subscription comparison page.
+    """
+    return get_all_tiers_for_api()
