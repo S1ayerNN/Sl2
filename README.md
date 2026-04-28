@@ -48,6 +48,12 @@ docker compose exec api alembic upgrade head
 - `PATCH /api/v1/profile/me` - Update profile
 - `GET /api/v1/profile/completeness` - Get profile completeness hints
 
+### Subscription
+- `POST /api/v1/subscription/subscribe` - Subscribe to a plan (stub: auto-confirms)
+- `GET /api/v1/subscription/status` - Get subscription status
+- `POST /api/v1/subscription/cancel` - Cancel subscription
+- `POST /api/v1/subscription/webhook` - Payment provider webhook
+
 ### Horoscope
 - `POST /api/v1/horoscope/generate` - Generate daily horoscope
 - `GET /api/v1/horoscope/today` - Get today's horoscope

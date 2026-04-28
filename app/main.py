@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import ads, auth, debug, horoscope, profile
+from app.api import ads, auth, debug, horoscope, profile, subscription
 from app.core.config import settings
 from app.core.database import engine
 from app.core.redis import redis_client
@@ -58,6 +58,7 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(profile.router, prefix="/api/v1")
 app.include_router(horoscope.router, prefix="/api/v1")
 app.include_router(ads.router, prefix="/api/v1")
+app.include_router(subscription.router, prefix="/api/v1")
 app.include_router(debug.router, prefix="/api/v1")
 
 

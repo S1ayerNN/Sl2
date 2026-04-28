@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     # PII Encryption - MUST be overridden in .env
     ENCRYPTION_KEY: str = "change-me-to-a-random-encryption-key"
 
+    # Webhook secret for payment provider callbacks
+    # In production: set to a strong random value shared with the payment provider
+    WEBHOOK_SECRET: str = ""  # Empty = no verification (stub mode only)
+
     # Ad verification
     AD_VIEW_TOKEN_TTL_SECONDS: int = 300  # 5 min validity for ad completion token
 

@@ -22,7 +22,7 @@
 
 ## 1. System Overview
 
-MyAstro -- AI-powered персонализированный гороскоп-сервис. Генерирует ежедневные гороскопы на основе профиля пользователя и истории обратной связи. Работает через мобильное приложение (Flutter) и Telegram бота.
+MyAstro -- AI-powered персонализированный гороскоп-сервис. Генерирует ежедневные гороскопы на основе профиля пользователя и истории обратной связи. Работает через веб-интерфейс (SPA), мобильное приложение (Flutter, планируется) и Telegram бота.
 
 ### Key Features
 
@@ -55,6 +55,7 @@ MyAstro -- AI-powered персонализированный гороскоп-с
 ```mermaid
 graph TB
     subgraph Clients
+        WEB[Web SPA]
         MOBILE[Flutter Mobile App]
         TGBOT[Telegram Bot]
     end
@@ -84,6 +85,7 @@ graph TB
         GOOGLE[Google OAuth]
     end
 
+    WEB --> NGINX
     MOBILE --> NGINX
     TGBOT --> API
     NGINX --> API
@@ -108,7 +110,8 @@ app/
 │   ├── ads.py              # Ad verification endpoints
 │   ├── auth.py             # Authentication endpoints
 │   ├── horoscope.py        # Horoscope generation/feedback
-│   └── profile.py          # User profile & family members
+│   ├── profile.py          # User profile & family members
+│   └── subscription.py     # Subscription purchase/cancel/webhook
 ├── core/                   # Infrastructure layer
 │   ├── config.py           # Settings (env vars)
 │   ├── crypto.py           # PII encryption/decryption
@@ -128,6 +131,7 @@ app/
 │   ├── auth_service.py     # Registration & login logic
 │   ├── content_safety.py   # Output safety filtering
 │   ├── horoscope_service.py # Generation orchestration
+│   ├── payment_service.py  # Payment provider abstraction (stub)
 │   └── zodiac_service.py   # Zodiac sign calculation
 └── main.py                 # FastAPI app entry point
 ```
@@ -150,11 +154,12 @@ erDiagram
         VARCHAR birth_place_encrypted "AES-256 encrypted"
         DATE birth_date
         TIME birth_time "nullable"
-        VARCHAR gender "Enum: male/female/other"
+        VARCHAR gender "Enum: male/female"
         VARCHAR zodiac_sign "Auto-calculated"
+        VARCHAR profession_encrypted "AES-256 encrypted, nullable"
         VARCHAR avatar_url "nullable"
         ARRAY interests "Enum values array"
-        VARCHAR subscription_tier "free/premium"
+        VARCHAR subscription_tier "free/plus/premium"
         TIMESTAMPTZ subscription_expires "nullable"
         TIMESTAMPTZ last_ad_viewed_at "nullable"
         VARCHAR ad_view_token "nullable, one-time"
@@ -207,11 +212,12 @@ erDiagram
 | birth_place_encrypted | VARCHAR(500) | nullable | Birth place, encrypted |
 | birth_date | DATE | NOT NULL | Birth date (for zodiac calc) |
 | birth_time | TIME | nullable | Birth time (for ascendant) |
-| gender | VARCHAR(20) | NOT NULL | `male`, `female`, or `other` |
+| gender | VARCHAR(20) | NOT NULL | `male` or `female` |
 | zodiac_sign | VARCHAR(20) | NOT NULL | Auto-calculated from birth_date |
+| profession_encrypted | VARCHAR(500) | nullable | Profession, AES-256 encrypted |
 | avatar_url | VARCHAR(500) | nullable | Profile picture URL |
 | interests | ARRAY(VARCHAR) | nullable | From InterestCategory enum |
-| subscription_tier | VARCHAR(20) | DEFAULT 'free' | `free` or `premium` |
+| subscription_tier | VARCHAR(20) | DEFAULT 'free' | `free`, `plus`, or `premium` |
 | subscription_expires | TIMESTAMPTZ | nullable | Premium expiry datetime |
 | last_ad_viewed_at | TIMESTAMPTZ | nullable | Last ad view timestamp |
 | ad_view_token | VARCHAR(64) | nullable | One-time ad completion token |
@@ -264,7 +270,7 @@ erDiagram
 | travel | Путешествия |
 | creativity | Творчество |
 
-**Gender:** `male`, `female`, `other`
+**Gender:** `male`, `female`
 
 **FamilyRelation:** `spouse`, `child`, `parent`, `sibling`, `partner`
 
@@ -350,29 +356,38 @@ sequenceDiagram
 | Role | Description | Capabilities |
 |---|---|---|
 | **Anonymous** | No token | Can only access: `GET /health`, `POST /auth/*` |
-| **Free User** | `subscription_tier = "free"` | Generate horoscope (after ad), feedback, profile, view history. No family members. |
-| **Premium User** | `subscription_tier = "premium"`, `subscription_expires > now` | All free features + no ads + better AI model + family members (up to 5) + higher daily limit |
+| **Free User** | `subscription_tier = "free"` | Generate horoscope (after ad), feedback, profile, view history. No family members, no focused/regeneration. |
+| **Plus User** | `subscription_tier = "plus"`, `subscription_expires > now` | All free features + no ads + 3 horoscopes/day + 1 focused/day + 1 regeneration/day + 1 family member |
+| **Premium User** | `subscription_tier = "premium"`, `subscription_expires > now` | All Plus features + better AI model + 6 horoscopes/day + 2 focused/day + 3 regenerations/day + up to 5 family members |
 
 ### Permission Matrix
 
-| Endpoint | Anonymous | Free | Premium |
-|---|---|---|---|
-| POST /auth/telegram | Yes | Yes | Yes |
-| POST /auth/google | Yes | Yes | Yes |
-| POST /auth/refresh | Yes | Yes | Yes |
-| GET /profile/me | - | Yes | Yes |
-| PATCH /profile/me | - | Yes | Yes |
-| GET /profile/options | - | Yes | Yes |
-| GET /profile/completeness | - | Yes | Yes |
-| GET /profile/family | - | Yes (empty) | Yes |
-| POST /profile/family | - | Denied (403) | Yes (up to 5) |
-| DELETE /profile/family/:id | - | Denied | Yes |
-| POST /ads/request-token | - | Yes | Not needed (400) |
-| POST /ads/confirm | - | Yes | Not needed |
-| POST /horoscope/generate | - | Yes (after ad) | Yes (direct) |
-| GET /horoscope/today | - | Yes | Yes |
-| GET /horoscope/history | - | Yes | Yes |
-| POST /horoscope/:id/feedback | - | Yes | Yes |
+| Endpoint | Anonymous | Free | Plus | Premium |
+|---|---|---|---|---|
+| POST /auth/telegram | Yes | Yes | Yes | Yes |
+| POST /auth/google | Yes | Yes | Yes | Yes |
+| POST /auth/refresh | Yes | Yes | Yes | Yes |
+| GET /profile/me | - | Yes | Yes | Yes |
+| PATCH /profile/me | - | Yes | Yes | Yes |
+| GET /profile/options | - | Yes | Yes | Yes |
+| GET /profile/completeness | - | Yes | Yes | Yes |
+| GET /profile/tiers | - | Yes | Yes | Yes |
+| GET /profile/family | - | Yes (empty) | Yes | Yes |
+| POST /profile/family | - | Denied (403) | Yes (1) | Yes (up to 5) |
+| DELETE /profile/family/:id | - | Denied | Yes | Yes |
+| POST /subscription/subscribe | - | Yes | Yes | Yes |
+| GET /subscription/status | - | Yes | Yes | Yes |
+| POST /subscription/cancel | - | - | Yes | Yes |
+| POST /subscription/webhook | Public | Public | Public | Public |
+| POST /ads/request-token | - | Yes | Not needed | Not needed |
+| POST /ads/confirm | - | Yes | Not needed | Not needed |
+| POST /horoscope/generate (general) | - | Yes (after ad) | Yes (3/day) | Yes (6/day) |
+| POST /horoscope/generate (focused) | - | Denied (403) | Yes (1/day) | Yes (2/day) |
+| POST /horoscope/generate (regen) | - | Denied (403) | Yes (1/day) | Yes (3/day) |
+| GET /horoscope/today | - | Yes | Yes | Yes |
+| GET /horoscope/history | - | Yes | Yes | Yes |
+| GET /horoscope/limits | - | Yes | Yes | Yes |
+| POST /horoscope/:id/feedback | - | Yes | Yes | Yes |
 
 ---
 
@@ -503,6 +518,7 @@ Get current user's profile (PII decrypted).
   "birth_time": "14:30",
   "birth_place": "Moscow",
   "email": "ivan@example.com",
+  "profession": "Designer",
   "avatar_url": "https://...",
   "interests": ["love", "career", "health"],
   "subscription_tier": "free",
@@ -528,6 +544,7 @@ Update profile fields (progressive completion).
   "birth_time": "14:30",
   "birth_place": "Moscow",
   "email": "ivan@example.com",
+  "profession": "Designer",
   "interests": ["love", "career", "finance"]
 }
 ```
@@ -537,6 +554,7 @@ Update profile fields (progressive completion).
 - `birth_time`: HH:MM format, 00:00-23:59
 - `birth_place`: max 200 characters
 - `email`: valid email format, max 255 characters
+- `profession`: free text, max 100 characters
 - `interests`: array of InterestCategory enum values only
 
 **Response (200):** Updated UserProfile.
@@ -572,8 +590,7 @@ Get predefined values for dropdown fields.
   ],
   "genders": [
     {"value": "male", "label_ru": "Мужской"},
-    {"value": "female", "label_ru": "Женский"},
-    {"value": "other", "label_ru": "Другой"}
+    {"value": "female", "label_ru": "Женский"}
   ],
   "relations": [
     {"value": "spouse", "label_ru": "Супруг(а)"},
@@ -657,7 +674,149 @@ Delete a family member.
 
 ---
 
-### 6.3 Ads (Free Users)
+### 6.3 Subscription
+
+#### POST /subscription/subscribe
+
+Start a subscription purchase. In stub mode, instantly activates without real payment.
+
+**Request Body:**
+```json
+{
+  "tier_id": "plus",
+  "period": "month"
+}
+```
+
+- `tier_id`: `"plus"` or `"premium"` (cannot subscribe to `"free"`)
+- `period`: `"month"` or `"year"`
+
+**Response (200):**
+```json
+{
+  "status": "activated",
+  "payment_id": "stub_a1b2c3d4e5f6",
+  "payment_url": null,
+  "tier_id": "plus",
+  "period": "month",
+  "price_rub": 149,
+  "message": "Подписка Plus активирована! (Stub-режим: оплата не списана)"
+}
+```
+
+**Errors:**
+- 400: Invalid tier/period, already on this tier
+
+**Logic:**
+1. Validate tier_id and period
+2. Check if user already has active subscription on same tier
+3. Calculate price from tier config
+4. Create payment via PaymentProvider
+5. Stub: auto-confirm and activate immediately
+6. Production: return payment_url for redirect to gateway
+
+**Payment Flow (Stub vs Production):**
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as API
+    participant PAY as PaymentProvider
+    participant DB as PostgreSQL
+
+    Note over C,DB: Stub Mode (current)
+    C->>API: POST /subscription/subscribe
+    API->>PAY: create_payment()
+    PAY-->>API: status=confirmed (instant)
+    API->>DB: Update subscription_tier + expires
+    API-->>C: status=activated
+
+    Note over C,DB: Production Mode (future)
+    C->>API: POST /subscription/subscribe
+    API->>PAY: create_payment()
+    PAY-->>API: payment_url + pending
+    API-->>C: status=pending_payment, payment_url
+    C->>PAY: Redirect to payment page
+    PAY-->>C: Payment complete
+    PAY->>API: POST /subscription/webhook
+    API->>DB: Update subscription_tier + expires
+```
+
+---
+
+#### GET /subscription/status
+
+Get current subscription status.
+
+**Response (200):**
+```json
+{
+  "tier_id": "plus",
+  "display_name": "Plus",
+  "is_active": true,
+  "expires_at": "2026-05-28T22:00:00Z",
+  "auto_renew": false,
+  "can_cancel": true
+}
+```
+
+---
+
+#### POST /subscription/cancel
+
+Cancel subscription. User retains access until expiration.
+
+**Response (200):**
+```json
+{
+  "status": "cancelled",
+  "message": "Подписка отменена. Доступ сохранится до 28.05.2026.",
+  "tier_id": "plus",
+  "expires_at": "2026-05-28T22:00:00Z"
+}
+```
+
+**Errors:**
+- 400: No active subscription to cancel
+
+**Logic:**
+1. Verify user has active paid subscription
+2. Cancel recurring charges with payment provider
+3. User keeps access until `subscription_expires`
+4. After expiry, `is_premium` returns false automatically
+
+---
+
+#### POST /subscription/webhook
+
+Payment provider webhook. In production: verify signature.
+
+**Request Body:**
+```json
+{
+  "payment_id": "stub_a1b2c3d4e5f6",
+  "status": "succeeded",
+  "provider": "stub"
+}
+```
+
+**Response (200):**
+```json
+{
+  "status": "ok",
+  "message": "Subscription activated."
+}
+```
+
+**Security notes for production:**
+- Verify webhook signature (HMAC / IP whitelist)
+- Use idempotency keys to prevent double-processing
+- Log all events for audit trail
+
+---
+
+### 6.4 Ads (Free Users)
+<!-- Note: section numbers shifted due to 6.3 Subscription insertion -->
 
 #### POST /ads/request-token
 
@@ -944,9 +1103,10 @@ flowchart LR
 | name | 15% | Yes (at registration) |
 | birth_date | 15% | Yes (at registration) |
 | gender | 10% | Yes (at registration) |
-| birth_time | 15% | No (progressive) |
-| birth_place | 15% | No (progressive) |
+| birth_time | 10% | No (progressive) |
+| birth_place | 10% | No (progressive) |
 | email | 10% | No (progressive) |
+| profession | 10% | No (progressive) |
 | interests | 20% | No (progressive) |
 
 ---
@@ -965,6 +1125,7 @@ classDiagram
         +String email_encrypted
         +String email_hash
         +String birth_place_encrypted
+        +String profession_encrypted
         +Date birth_date
         +Time birth_time
         +String gender
@@ -1019,7 +1180,6 @@ classDiagram
         <<enumeration>>
         MALE
         FEMALE
-        OTHER
     }
 
     class FamilyRelation {
@@ -1081,6 +1241,7 @@ graph TB
 | Name | AES-256 encryption | Yes (with key) |
 | Email | AES-256 encryption + SHA-256 hash | Encryption: yes. Hash: no. |
 | Birth place | AES-256 encryption | Yes (with key) |
+| Profession | AES-256 encryption | Yes (with key) |
 | Birth date | Plaintext (needed for zodiac calc) | N/A |
 | Passwords | Not stored (external auth only) | N/A |
 | Auth tokens | Not stored (JWT stateless) | N/A |
@@ -1101,6 +1262,7 @@ graph TB
 | name | 2-100 chars, trimmed | 100 |
 | email | Regex email format | 255 |
 | birth_place | Trimmed | 200 |
+| profession | Trimmed | 100 |
 | birth_time | HH:MM, 00:00-23:59 | 5 |
 | gender | Enum whitelist only | 20 |
 | interests | Enum whitelist only | N/A |
@@ -1119,4 +1281,5 @@ graph TB
 
 - Implemented via Redis atomic INCR (no race conditions)
 - Fails closed (if Redis down, requests denied)
-- Per-user daily limits: 3 (free) / 20 (premium)
+- Per-user daily limits: unlimited with ads (free) / 3 general + 1 focus + 1 regen (plus) / 6 general + 2 focus + 3 regen (premium)
+- Separate counters for general / focused / regeneration horoscope types
