@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, horoscope, profile
+from app.api import ads, auth, horoscope, profile
 from app.core.config import settings
 from app.core.database import engine
 from app.core.redis import redis_client
@@ -21,6 +21,11 @@ async def lifespan(app: FastAPI):
     if len(settings.JWT_SECRET_KEY) < 32:
         raise RuntimeError(
             "CRITICAL: JWT_SECRET_KEY is too short. Use at least 32 characters."
+        )
+    if settings.ENCRYPTION_KEY in ("change-me-to-a-random-encryption-key", ""):
+        raise RuntimeError(
+            "CRITICAL: ENCRYPTION_KEY must be set in .env. "
+            "Generate one with: openssl rand -hex 32"
         )
 
     # Startup: verify connections
@@ -52,6 +57,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(profile.router, prefix="/api/v1")
 app.include_router(horoscope.router, prefix="/api/v1")
+app.include_router(ads.router, prefix="/api/v1")
 
 
 @app.get("/health")

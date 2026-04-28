@@ -1,40 +1,66 @@
-from datetime import date, datetime, timezone
+"""Horoscope business logic service.
+
+Handles generation, caching, rate limiting, ad verification, and feedback.
+All AI interaction happens server-side - users cannot input prompt text.
+"""
+
+from datetime import date
 from uuid import UUID
 
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.redis import cache_horoscope, check_rate_limit, get_cached_horoscope
 from app.models.horoscope import Horoscope
-from app.models.user import User
-from app.services.ai_service import generate_horoscope
+from app.models.user import User, FamilyMember
+from app.services.ai_service import (
+    generate_horoscope_for_user,
+    generate_horoscope_for_family_member,
+)
+from app.services.ad_service import verify_ad_requirement
 
 
 async def get_user_history(
-    user_id: UUID, db: AsyncSession, limit: int = 5
+    user_id: UUID,
+    db: AsyncSession,
+    limit: int = 5,
+    family_member_id: UUID = None,
 ) -> list[Horoscope]:
-    """Get the last N horoscopes for a user (with feedback)."""
+    """Get the last N horoscopes for a user or family member."""
+    query = select(Horoscope).where(Horoscope.user_id == user_id)
+
+    if family_member_id:
+        query = query.where(Horoscope.family_member_id == family_member_id)
+    else:
+        query = query.where(Horoscope.family_member_id.is_(None))
+
     result = await db.execute(
-        select(Horoscope)
-        .where(Horoscope.user_id == user_id)
-        .order_by(desc(Horoscope.created_at))
-        .limit(limit)
+        query.order_by(desc(Horoscope.created_at)).limit(limit)
     )
     return list(result.scalars().all())
 
 
 async def get_todays_horoscope(
-    user: User, db: AsyncSession
+    user: User,
+    db: AsyncSession,
+    family_member_id: UUID = None,
 ) -> Horoscope | None:
     """Check if user already has a horoscope for today."""
     today = date.today()
-    result = await db.execute(
+    query = (
         select(Horoscope)
         .where(Horoscope.user_id == user.id)
         .where(Horoscope.horoscope_date == today)
-        .order_by(desc(Horoscope.created_at))
-        .limit(1)
+    )
+
+    if family_member_id:
+        query = query.where(Horoscope.family_member_id == family_member_id)
+    else:
+        query = query.where(Horoscope.family_member_id.is_(None))
+
+    result = await db.execute(
+        query.order_by(desc(Horoscope.created_at)).limit(1)
     )
     return result.scalar_one_or_none()
 
@@ -43,15 +69,25 @@ async def create_horoscope(
     user: User,
     db: AsyncSession,
     target_date: date | None = None,
+    family_member_id: UUID | None = None,
 ) -> Horoscope:
-    """Generate and save a new horoscope for the user.
+    """Generate and save a new horoscope.
 
-    Handles rate limiting, caching, history lookup, and AI generation.
+    For free users: requires ad verification for each generation.
     """
     if target_date is None:
         target_date = date.today()
 
-    # Check rate limit
+    # Ad verification for free users
+    if not user.is_premium:
+        ad_ok = await verify_ad_requirement(user)
+        if not ad_ok:
+            raise ValueError(
+                "Ad viewing required. Request an ad token, watch the ad, "
+                "then confirm before generating a horoscope."
+            )
+
+    # Rate limit check
     daily_limit = (
         settings.HOROSCOPE_DAILY_LIMIT_PREMIUM
         if user.is_premium
@@ -64,43 +100,65 @@ async def create_horoscope(
             "Upgrade to premium for more horoscopes!"
         )
 
-    # Check cache
-    cached = await get_cached_horoscope(str(user.id), target_date.isoformat())
-    if cached:
-        # Return existing horoscope from cache
-        existing = await get_todays_horoscope(user, db)
-        if existing:
-            return existing
+    # Resolve family member if specified
+    member = None
+    if family_member_id:
+        result = await db.execute(
+            select(FamilyMember)
+            .where(FamilyMember.id == family_member_id)
+            .where(FamilyMember.owner_id == user.id)
+        )
+        member = result.scalar_one_or_none()
+        if member is None:
+            raise ValueError("Family member not found")
 
     # Get history for personalization
     history = await get_user_history(
-        user.id, db, limit=settings.HOROSCOPE_HISTORY_SIZE
+        user.id, db,
+        limit=settings.HOROSCOPE_HISTORY_SIZE,
+        family_member_id=family_member_id,
     )
 
-    # Generate via AI
-    horoscope_text, prompt_used, model_used = await generate_horoscope(
-        user=user,
-        target_date=target_date,
-        history=history,
-        is_premium=user.is_premium,
-    )
+    # Generate via AI (all prompt building is server-side)
+    if member:
+        text, prompt, model, safety_ok = await generate_horoscope_for_family_member(
+            member=member,
+            target_date=target_date,
+            history=history,
+            is_premium=user.is_premium,
+        )
+    else:
+        text, prompt, model, safety_ok = await generate_horoscope_for_user(
+            user=user,
+            target_date=target_date,
+            history=history,
+            is_premium=user.is_premium,
+        )
 
     # Save to database
     horoscope = Horoscope(
         user_id=user.id,
+        family_member_id=family_member_id,
         horoscope_date=target_date,
-        horoscope_text=horoscope_text,
-        ai_model_used=model_used,
-        prompt_used=prompt_used,
+        horoscope_text=text,
+        ai_model_used=model,
+        prompt_used=prompt,
+        safety_passed=safety_ok,
     )
     db.add(horoscope)
     await db.flush()
 
     # Cache the result
-    await cache_horoscope(str(user.id), target_date.isoformat(), horoscope_text)
+    cache_key = f"{user.id}:{family_member_id or 'self'}"
+    await cache_horoscope(cache_key, target_date.isoformat(), text)
 
-    # Cleanup old horoscopes (keep only last HOROSCOPE_HISTORY_SIZE)
-    await _cleanup_old_horoscopes(user.id, db)
+    # Cleanup old horoscopes
+    await _cleanup_old_horoscopes(user.id, db, family_member_id)
+
+    # Invalidate ad token after successful generation (one horoscope per ad)
+    if not user.is_premium:
+        user.ad_view_token = None
+        await db.flush()
 
     return horoscope
 
@@ -124,36 +182,50 @@ async def submit_feedback(
 
     horoscope.feedback = feedback
     await db.flush()
-
     return horoscope
 
 
-async def _cleanup_old_horoscopes(user_id: UUID, db: AsyncSession) -> None:
-    """Keep only the last HOROSCOPE_HISTORY_SIZE horoscopes per user."""
-    # Count total horoscopes
-    count_result = await db.execute(
-        select(func.count(Horoscope.id)).where(Horoscope.user_id == user_id)
-    )
+async def _cleanup_old_horoscopes(
+    user_id: UUID,
+    db: AsyncSession,
+    family_member_id: UUID = None,
+) -> None:
+    """Keep only the last HOROSCOPE_HISTORY_SIZE horoscopes."""
+    query = select(func.count(Horoscope.id)).where(Horoscope.user_id == user_id)
+    if family_member_id:
+        query = query.where(Horoscope.family_member_id == family_member_id)
+    else:
+        query = query.where(Horoscope.family_member_id.is_(None))
+
+    count_result = await db.execute(query)
     total = count_result.scalar()
 
     max_keep = settings.HOROSCOPE_HISTORY_SIZE
     if total <= max_keep:
         return
 
-    # Get IDs to keep (most recent)
-    keep_result = await db.execute(
+    keep_query = (
         select(Horoscope.id)
         .where(Horoscope.user_id == user_id)
-        .order_by(desc(Horoscope.created_at))
-        .limit(max_keep)
+    )
+    if family_member_id:
+        keep_query = keep_query.where(Horoscope.family_member_id == family_member_id)
+    else:
+        keep_query = keep_query.where(Horoscope.family_member_id.is_(None))
+
+    keep_result = await db.execute(
+        keep_query.order_by(desc(Horoscope.created_at)).limit(max_keep)
     )
     keep_ids = [row[0] for row in keep_result.all()]
 
-    # Delete the rest
-    from sqlalchemy import delete
-
-    await db.execute(
+    del_query = (
         delete(Horoscope)
         .where(Horoscope.user_id == user_id)
         .where(Horoscope.id.notin_(keep_ids))
     )
+    if family_member_id:
+        del_query = del_query.where(Horoscope.family_member_id == family_member_id)
+    else:
+        del_query = del_query.where(Horoscope.family_member_id.is_(None))
+
+    await db.execute(del_query)

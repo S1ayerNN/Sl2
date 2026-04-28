@@ -17,6 +17,11 @@ class Horoscope(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
+    # Optional: horoscope can be for a family member
+    family_member_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("family_members.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
 
     # Horoscope content
     horoscope_date: Mapped[date] = mapped_column(Date, index=True)
@@ -36,5 +41,9 @@ class Horoscope(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
+    # Content safety check result
+    safety_passed: Mapped[bool] = mapped_column(default=True)
+
     # Relationships
     user = relationship("User", back_populates="horoscopes")
+    family_member = relationship("FamilyMember", back_populates="horoscopes")

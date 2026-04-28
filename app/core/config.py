@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
 
+    # PII Encryption - MUST be overridden in .env
+    ENCRYPTION_KEY: str = "change-me-to-a-random-encryption-key"
+
+    # Ad verification
+    AD_VIEW_TOKEN_TTL_SECONDS: int = 300  # 5 min validity for ad completion token
+
+    # Family members
+    FAMILY_MEMBERS_LIMIT_FREE: int = 0  # Free users: only self
+    FAMILY_MEMBERS_LIMIT_PREMIUM: int = 5  # Premium users: up to 5 members
+
     # Rate limiting
     HOROSCOPE_DAILY_LIMIT_FREE: int = 3
     HOROSCOPE_DAILY_LIMIT_PREMIUM: int = 20

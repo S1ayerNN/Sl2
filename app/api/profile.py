@@ -1,38 +1,79 @@
-from datetime import time
+"""Profile API endpoints.
+
+PII is encrypted in DB and decrypted only when returning to the authenticated user.
+Interests are selected from a predefined list only - no free text input.
+"""
+
+import re
+from datetime import date, time
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
 
+from app.core.config import settings
+from app.core.crypto import decrypt_pii, encrypt_pii, hash_identifier
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.user import User
-from app.schemas.user import ProfileCompletenessHint, UserProfile, UserProfileUpdate
+from app.models.user import (
+    User, FamilyMember, InterestCategory, Gender, FamilyRelation,
+)
+from app.schemas.user import (
+    AVAILABLE_GENDERS, AVAILABLE_INTERESTS, AVAILABLE_RELATIONS,
+    AvailableOptionsResponse, FamilyMemberCreate, FamilyMemberResponse,
+    ProfileCompletenessHint, UserProfile, UserProfileUpdate,
+)
+from app.services.zodiac_service import get_zodiac_sign
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
+
+
+def _user_to_profile(user: User) -> UserProfile:
+    """Convert User model to profile response, decrypting PII."""
+    return UserProfile(
+        id=user.id,
+        name=decrypt_pii(user.name_encrypted),
+        birth_date=user.birth_date,
+        gender=user.gender,
+        zodiac_sign=user.zodiac_sign,
+        birth_time=user.birth_time,
+        birth_place=decrypt_pii(user.birth_place_encrypted) if user.birth_place_encrypted else None,
+        email=decrypt_pii(user.email_encrypted) if user.email_encrypted else None,
+        avatar_url=user.avatar_url,
+        interests=user.interests or [],
+        subscription_tier=user.subscription_tier,
+        subscription_expires=user.subscription_expires,
+        is_premium=user.is_premium,
+        family_members_count=len(user.family_members) if user.family_members else 0,
+        family_members_limit=(
+            settings.FAMILY_MEMBERS_LIMIT_PREMIUM if user.is_premium
+            else settings.FAMILY_MEMBERS_LIMIT_FREE
+        ),
+        profile_completeness=user.profile_completeness,
+        created_at=user.created_at,
+    )
+
+
+@router.get("/options", response_model=AvailableOptionsResponse)
+async def get_available_options():
+    """Get predefined options for interests, genders, and family relations.
+
+    Frontend MUST use these values - no free text input for these fields.
+    """
+    return AvailableOptionsResponse(
+        interests=AVAILABLE_INTERESTS,
+        genders=AVAILABLE_GENDERS,
+        relations=AVAILABLE_RELATIONS,
+    )
 
 
 @router.get("/me", response_model=UserProfile)
 async def get_my_profile(
     current_user: User = Depends(get_current_user),
 ):
-    """Get current user's profile."""
-    return UserProfile(
-        id=current_user.id,
-        name=current_user.name,
-        birth_date=current_user.birth_date,
-        gender=current_user.gender,
-        zodiac_sign=current_user.zodiac_sign,
-        birth_time=current_user.birth_time,
-        birth_place=current_user.birth_place,
-        email=current_user.email,
-        avatar_url=current_user.avatar_url,
-        interests=current_user.interests,
-        subscription_tier=current_user.subscription_tier,
-        subscription_expires=current_user.subscription_expires,
-        is_premium=current_user.is_premium,
-        profile_completeness=current_user.profile_completeness,
-        created_at=current_user.created_at,
-    )
+    """Get current user's profile (PII decrypted)."""
+    return _user_to_profile(current_user)
 
 
 @router.patch("/me", response_model=UserProfile)
@@ -43,10 +84,9 @@ async def update_my_profile(
 ):
     """Update current user's profile.
 
-    Only provided fields will be updated. Use this for progressive profile completion.
+    - Name, birth_place, email are encrypted before storage
+    - Interests MUST be from the predefined list
     """
-    import re
-
     if update_data.name is not None:
         name = update_data.name.strip()
         if len(name) < 2 or len(name) > 100:
@@ -54,22 +94,21 @@ async def update_my_profile(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Name must be between 2 and 100 characters",
             )
-        current_user.name = name
+        current_user.name_encrypted = encrypt_pii(name)
 
     if update_data.birth_time is not None:
-        try:
-            if not re.match(r'^\d{1,2}:\d{2}$', update_data.birth_time):
-                raise ValueError()
-            hours, minutes = update_data.birth_time.split(":")
-            h, m = int(hours), int(minutes)
-            if not (0 <= h <= 23 and 0 <= m <= 59):
-                raise ValueError()
-            current_user.birth_time = time(h, m)
-        except (ValueError, AttributeError):
+        if not re.match(r'^\d{1,2}:\d{2}$', update_data.birth_time):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid time format. Use HH:MM (00:00-23:59)",
+                detail="Invalid time format. Use HH:MM",
             )
+        h, m = map(int, update_data.birth_time.split(":"))
+        if not (0 <= h <= 23 and 0 <= m <= 59):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid time. Hours 0-23, minutes 0-59",
+            )
+        current_user.birth_time = time(h, m)
 
     if update_data.birth_place is not None:
         place = update_data.birth_place.strip()
@@ -78,7 +117,7 @@ async def update_my_profile(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Birth place must be under 200 characters",
             )
-        current_user.birth_place = place
+        current_user.birth_place_encrypted = encrypt_pii(place)
 
     if update_data.email is not None:
         email = update_data.email.strip().lower()
@@ -87,79 +126,177 @@ async def update_my_profile(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid email format",
             )
-        if len(email) > 255:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email must be under 255 characters",
-            )
-        current_user.email = email
+        current_user.email_encrypted = encrypt_pii(email)
+        current_user.email_hash = hash_identifier(email)
 
     if update_data.interests is not None:
-        # Only allow known interest keys with boolean values
-        allowed_keys = {"love", "career", "health", "finance"}
-        sanitized = {}
-        for k, v in update_data.interests.items():
-            if k in allowed_keys and isinstance(v, bool):
-                sanitized[k] = v
+        # Validate: ONLY predefined interest categories allowed
+        valid_values = {ic.value for ic in InterestCategory}
+        sanitized = [i for i in update_data.interests if i in valid_values]
         current_user.interests = sanitized
 
-    # Recalculate profile completeness
     current_user.profile_completeness = current_user.calculate_completeness()
-
     await db.flush()
 
-    return UserProfile(
-        id=current_user.id,
-        name=current_user.name,
-        birth_date=current_user.birth_date,
-        gender=current_user.gender,
-        zodiac_sign=current_user.zodiac_sign,
-        birth_time=current_user.birth_time,
-        birth_place=current_user.birth_place,
-        email=current_user.email,
-        avatar_url=current_user.avatar_url,
-        interests=current_user.interests,
-        subscription_tier=current_user.subscription_tier,
-        subscription_expires=current_user.subscription_expires,
-        is_premium=current_user.is_premium,
-        profile_completeness=current_user.profile_completeness,
-        created_at=current_user.created_at,
-    )
+    return _user_to_profile(current_user)
 
 
 @router.get("/completeness", response_model=ProfileCompletenessHint)
 async def get_profile_completeness(
     current_user: User = Depends(get_current_user),
 ):
-    """Get profile completeness status and hints about missing fields.
-
-    Use this to prompt users to fill in additional data for better horoscopes.
-    """
+    """Get profile completeness and hints for missing fields."""
     missing = []
     hints = {
         "birth_time": "Укажи время рождения для расчета асцендента",
-        "birth_place": "Добавь место рождения для натальной карты",
-        "email": "Добавь email для восстановления аккаунта",
+        "birth_place_encrypted": "Добавь место рождения для натальной карты",
+        "email_encrypted": "Добавь email для восстановления аккаунта",
         "interests": "Выбери интересующие сферы жизни для персонализации",
     }
 
     if current_user.birth_time is None:
         missing.append("birth_time")
-    if current_user.birth_place is None:
+    if not current_user.birth_place_encrypted:
         missing.append("birth_place")
-    if current_user.email is None:
+    if not current_user.email_encrypted:
         missing.append("email")
     if not current_user.interests:
         missing.append("interests")
 
     if missing:
-        first_missing = missing[0]
-        hint_message = hints.get(first_missing, "Заполни профиль для лучших гороскопов")
+        field_key = {
+            "birth_time": "birth_time",
+            "birth_place": "birth_place_encrypted",
+            "email": "email_encrypted",
+            "interests": "interests",
+        }.get(missing[0], missing[0])
+        hint_message = hints.get(field_key, "Заполни профиль для лучших гороскопов")
     else:
-        hint_message = "Твой профиль полностью заполнен! Гороскопы максимально персонализированы."
+        hint_message = "Профиль полностью заполнен! Гороскопы максимально персонализированы."
 
     return ProfileCompletenessHint(
         completeness=current_user.profile_completeness,
         missing_fields=missing,
         hint_message=hint_message,
     )
+
+
+# --- Family Members ---
+
+
+@router.get("/family", response_model=list[FamilyMemberResponse])
+async def list_family_members(
+    current_user: User = Depends(get_current_user),
+):
+    """List all family member profiles."""
+    members = current_user.family_members or []
+    return [
+        FamilyMemberResponse(
+            id=m.id,
+            name=decrypt_pii(m.name_encrypted),
+            relation=m.relation,
+            birth_date=m.birth_date,
+            birth_time=m.birth_time,
+            gender=m.gender,
+            zodiac_sign=m.zodiac_sign,
+            interests=m.interests or [],
+            created_at=m.created_at,
+        )
+        for m in members
+    ]
+
+
+@router.post("/family", response_model=FamilyMemberResponse, status_code=201)
+async def add_family_member(
+    data: FamilyMemberCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Add a family member profile.
+
+    Free users: 0 members allowed (only self)
+    Premium users: up to 5 members
+    """
+    limit = (
+        settings.FAMILY_MEMBERS_LIMIT_PREMIUM if current_user.is_premium
+        else settings.FAMILY_MEMBERS_LIMIT_FREE
+    )
+    current_count = len(current_user.family_members) if current_user.family_members else 0
+
+    if current_count >= limit:
+        if not current_user.is_premium:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Family members available only for premium subscribers",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Maximum {limit} family members allowed",
+        )
+
+    # Validate enums
+    if data.gender not in [g.value for g in Gender]:
+        raise HTTPException(status_code=400, detail="Invalid gender")
+    if data.relation not in [r.value for r in FamilyRelation]:
+        raise HTTPException(status_code=400, detail="Invalid relation")
+
+    name = data.name.strip()
+    if len(name) < 2 or len(name) > 100:
+        raise HTTPException(status_code=400, detail="Name must be 2-100 characters")
+
+    birth_date = date.fromisoformat(data.birth_date)
+    zodiac_sign = get_zodiac_sign(birth_date)
+
+    birth_time_val = None
+    if data.birth_time:
+        h, m = map(int, data.birth_time.split(":"))
+        birth_time_val = time(h, m)
+
+    interests = []
+    if data.interests:
+        valid_values = {ic.value for ic in InterestCategory}
+        interests = [i for i in data.interests if i in valid_values]
+
+    member = FamilyMember(
+        owner_id=current_user.id,
+        name_encrypted=encrypt_pii(name),
+        relation=data.relation,
+        birth_date=birth_date,
+        birth_time=birth_time_val,
+        gender=data.gender,
+        zodiac_sign=zodiac_sign,
+        interests=interests,
+    )
+    db.add(member)
+    await db.flush()
+
+    return FamilyMemberResponse(
+        id=member.id,
+        name=name,
+        relation=member.relation,
+        birth_date=member.birth_date,
+        birth_time=member.birth_time,
+        gender=member.gender,
+        zodiac_sign=member.zodiac_sign,
+        interests=member.interests or [],
+        created_at=member.created_at,
+    )
+
+
+@router.delete("/family/{member_id}", status_code=204)
+async def delete_family_member(
+    member_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete a family member profile."""
+    result = await db.execute(
+        select(FamilyMember)
+        .where(FamilyMember.id == member_id)
+        .where(FamilyMember.owner_id == current_user.id)
+    )
+    member = result.scalar_one_or_none()
+    if member is None:
+        raise HTTPException(status_code=404, detail="Family member not found")
+    await db.delete(member)
+    await db.flush()

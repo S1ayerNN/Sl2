@@ -24,5 +24,8 @@ pydantic==2.9.2
 pydantic-settings==2.5.2
 python-dotenv==1.0.1
 
+# Encryption for PII
+cryptography==43.0.1
+
 # Zodiac calculations
 ephem==4.1.5

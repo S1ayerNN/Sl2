@@ -1,3 +1,11 @@
+"""Horoscope API endpoints.
+
+Users have NO text input for AI prompts. They can only:
+- Request generation (optionally for a family member)
+- View history
+- Submit feedback (like/dislike)
+"""
+
 from datetime import date
 from uuid import UUID
 
@@ -31,48 +39,59 @@ async def generate_daily_horoscope(
 ):
     """Generate a personalized daily horoscope.
 
-    Free users: uses GPT-4o-mini, limited to 3 per day.
-    Premium users: uses GPT-4o, up to 20 per day.
+    Free users: must watch ad first (POST /ads/request-token + /ads/confirm).
+    Premium users: generate directly, up to 20 per day.
 
-    The horoscope is personalized based on:
-    - User's zodiac sign and profile data
-    - Last 5 horoscopes and their feedback (like/dislike)
+    User has NO text input - horoscope is generated from profile data and history.
+    Optionally specify family_member_id to generate for a family member.
     """
     target_date = None
-    if request and request.target_date:
-        try:
-            target_date = date.fromisoformat(request.target_date)
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid date format. Use YYYY-MM-DD",
-            )
+    family_member_id = None
+
+    if request:
+        if request.target_date:
+            try:
+                target_date = date.fromisoformat(request.target_date)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid date format. Use YYYY-MM-DD",
+                )
+        if request.family_member_id:
+            try:
+                family_member_id = UUID(request.family_member_id)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid family member ID",
+                )
 
     try:
         horoscope = await create_horoscope(
             user=current_user,
             db=db,
             target_date=target_date,
+            family_member_id=family_member_id,
         )
         return HoroscopeResponse.model_validate(horoscope)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=str(e),
-        )
+        error_msg = str(e)
+        if "limit" in error_msg.lower():
+            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=error_msg)
+        if "ad" in error_msg.lower():
+            raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=error_msg)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
 
 
 @router.get("/today", response_model=HoroscopeResponse | None)
 async def get_today_horoscope(
+    family_member_id: str | None = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get today's horoscope if it was already generated.
-
-    Returns null if no horoscope has been generated today.
-    Use POST /generate to create one.
-    """
-    horoscope = await get_todays_horoscope(current_user, db)
+    """Get today's horoscope if already generated."""
+    fm_id = UUID(family_member_id) if family_member_id else None
+    horoscope = await get_todays_horoscope(current_user, db, family_member_id=fm_id)
     if horoscope is None:
         return None
     return HoroscopeResponse.model_validate(horoscope)
@@ -80,14 +99,13 @@ async def get_today_horoscope(
 
 @router.get("/history", response_model=HoroscopeHistoryResponse)
 async def get_horoscope_history(
+    family_member_id: str | None = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get the last 5 horoscopes with feedback.
-
-    This is the same data used by AI to personalize future horoscopes.
-    """
-    history = await get_user_history(current_user.id, db)
+    """Get the last 5 horoscopes with feedback."""
+    fm_id = UUID(family_member_id) if family_member_id else None
+    history = await get_user_history(current_user.id, db, family_member_id=fm_id)
     return HoroscopeHistoryResponse(
         horoscopes=[HoroscopeResponse.model_validate(h) for h in history],
         total=len(history),
@@ -101,10 +119,7 @@ async def submit_horoscope_feedback(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Submit feedback (like/dislike) for a horoscope.
-
-    This feedback is stored and used by AI to improve future horoscopes.
-    """
+    """Submit feedback (like/dislike) for a horoscope."""
     try:
         horoscope = await submit_feedback(
             horoscope_id=horoscope_id,
