@@ -110,7 +110,8 @@ app/
 │   ├── ads.py              # Ad verification endpoints
 │   ├── auth.py             # Authentication endpoints
 │   ├── horoscope.py        # Horoscope generation/feedback
-│   └── profile.py          # User profile & family members
+│   ├── profile.py          # User profile & family members
+│   └── subscription.py     # Subscription purchase/cancel/webhook
 ├── core/                   # Infrastructure layer
 │   ├── config.py           # Settings (env vars)
 │   ├── crypto.py           # PII encryption/decryption
@@ -130,6 +131,7 @@ app/
 │   ├── auth_service.py     # Registration & login logic
 │   ├── content_safety.py   # Output safety filtering
 │   ├── horoscope_service.py # Generation orchestration
+│   ├── payment_service.py  # Payment provider abstraction (stub)
 │   └── zodiac_service.py   # Zodiac sign calculation
 └── main.py                 # FastAPI app entry point
 ```
@@ -373,6 +375,10 @@ sequenceDiagram
 | GET /profile/family | - | Yes (empty) | Yes | Yes |
 | POST /profile/family | - | Denied (403) | Yes (1) | Yes (up to 5) |
 | DELETE /profile/family/:id | - | Denied | Yes | Yes |
+| POST /subscription/subscribe | - | Yes | Yes | Yes |
+| GET /subscription/status | - | Yes | Yes | Yes |
+| POST /subscription/cancel | - | - | Yes | Yes |
+| POST /subscription/webhook | Public | Public | Public | Public |
 | POST /ads/request-token | - | Yes | Not needed | Not needed |
 | POST /ads/confirm | - | Yes | Not needed | Not needed |
 | POST /horoscope/generate (general) | - | Yes (after ad) | Yes (3/day) | Yes (6/day) |
@@ -668,7 +674,149 @@ Delete a family member.
 
 ---
 
-### 6.3 Ads (Free Users)
+### 6.3 Subscription
+
+#### POST /subscription/subscribe
+
+Start a subscription purchase. In stub mode, instantly activates without real payment.
+
+**Request Body:**
+```json
+{
+  "tier_id": "plus",
+  "period": "month"
+}
+```
+
+- `tier_id`: `"plus"` or `"premium"` (cannot subscribe to `"free"`)
+- `period`: `"month"` or `"year"`
+
+**Response (200):**
+```json
+{
+  "status": "activated",
+  "payment_id": "stub_a1b2c3d4e5f6",
+  "payment_url": null,
+  "tier_id": "plus",
+  "period": "month",
+  "price_rub": 149,
+  "message": "Подписка Plus активирована! (Stub-режим: оплата не списана)"
+}
+```
+
+**Errors:**
+- 400: Invalid tier/period, already on this tier
+
+**Logic:**
+1. Validate tier_id and period
+2. Check if user already has active subscription on same tier
+3. Calculate price from tier config
+4. Create payment via PaymentProvider
+5. Stub: auto-confirm and activate immediately
+6. Production: return payment_url for redirect to gateway
+
+**Payment Flow (Stub vs Production):**
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as API
+    participant PAY as PaymentProvider
+    participant DB as PostgreSQL
+
+    Note over C,DB: Stub Mode (current)
+    C->>API: POST /subscription/subscribe
+    API->>PAY: create_payment()
+    PAY-->>API: status=confirmed (instant)
+    API->>DB: Update subscription_tier + expires
+    API-->>C: status=activated
+
+    Note over C,DB: Production Mode (future)
+    C->>API: POST /subscription/subscribe
+    API->>PAY: create_payment()
+    PAY-->>API: payment_url + pending
+    API-->>C: status=pending_payment, payment_url
+    C->>PAY: Redirect to payment page
+    PAY-->>C: Payment complete
+    PAY->>API: POST /subscription/webhook
+    API->>DB: Update subscription_tier + expires
+```
+
+---
+
+#### GET /subscription/status
+
+Get current subscription status.
+
+**Response (200):**
+```json
+{
+  "tier_id": "plus",
+  "display_name": "Plus",
+  "is_active": true,
+  "expires_at": "2026-05-28T22:00:00Z",
+  "auto_renew": false,
+  "can_cancel": true
+}
+```
+
+---
+
+#### POST /subscription/cancel
+
+Cancel subscription. User retains access until expiration.
+
+**Response (200):**
+```json
+{
+  "status": "cancelled",
+  "message": "Подписка отменена. Доступ сохранится до 28.05.2026.",
+  "tier_id": "plus",
+  "expires_at": "2026-05-28T22:00:00Z"
+}
+```
+
+**Errors:**
+- 400: No active subscription to cancel
+
+**Logic:**
+1. Verify user has active paid subscription
+2. Cancel recurring charges with payment provider
+3. User keeps access until `subscription_expires`
+4. After expiry, `is_premium` returns false automatically
+
+---
+
+#### POST /subscription/webhook
+
+Payment provider webhook. In production: verify signature.
+
+**Request Body:**
+```json
+{
+  "payment_id": "stub_a1b2c3d4e5f6",
+  "status": "succeeded",
+  "provider": "stub"
+}
+```
+
+**Response (200):**
+```json
+{
+  "status": "ok",
+  "message": "Subscription activated."
+}
+```
+
+**Security notes for production:**
+- Verify webhook signature (HMAC / IP whitelist)
+- Use idempotency keys to prevent double-processing
+- Log all events for audit trail
+
+---
+
+### 6.4 Ads (Free Users)
+<!-- Note: section numbers shifted due to 6.3 Subscription insertion -->
 
 #### POST /ads/request-token
 

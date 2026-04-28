@@ -252,6 +252,15 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <!-- SUBSCRIPTION -->
 <div id="screen-subscription" class="screen">
   <h1 class="mb16">&#11088; Подписка</h1>
+  <div id="sub-status" class="card" style="display:none;">
+    <div class="flex" style="justify-content:space-between;align-items:center;">
+      <div>
+        <div class="gold" id="sub-tier-name" style="font-size:1.1rem;"></div>
+        <div class="txt2" id="sub-expires" style="font-size:0.85rem;"></div>
+      </div>
+      <button class="btn btn-err btn-sm" id="btn-cancel-sub" onclick="cancelSub()" style="display:none;">Отменить</button>
+    </div>
+  </div>
   <div id="tiers-list"></div>
 </div>
 
@@ -542,13 +551,64 @@ async function saveProfile(){
   try{profile=await api('/profile/me','PATCH',b);toast('Сохранено!');loadProfileScreen();}catch(e){toast(e.message);}
 }
 
-// Tiers
+// Tiers & Subscription
 async function loadTiers(){
   try{
+    // Load subscription status
+    const sub=await api('/subscription/status');
+    const statusEl=document.getElementById('sub-status');
+    if(sub.tier_id!=='free'){
+      statusEl.style.display='block';
+      document.getElementById('sub-tier-name').textContent=sub.display_name+(sub.is_active?' (активна)':' (истекла)');
+      document.getElementById('sub-expires').textContent=sub.expires_at?'до '+new Date(sub.expires_at).toLocaleDateString('ru-RU'):'';
+      document.getElementById('btn-cancel-sub').style.display=sub.can_cancel?'inline-block':'none';
+    }else{statusEl.style.display='none';}
+
+    // Load tier cards
     const tiers=await api('/profile/tiers');
-    document.getElementById('tiers-list').innerHTML=tiers.map(t=>
-      '<div class="card"><div class="gold" style="font-size:1.1rem;">'+t.display_name+' '+(t.price_monthly_rub?t.price_monthly_rub+' &#8381;/мес':'бесплатно')+'</div><div class="txt2 mt16" style="font-size:0.85rem;">'+(t.features.ads_free?'&#10003; Без рекламы':'&#10007; С рекламой')+'<br>Гороскопов/день: '+t.features.daily_general_limit+'<br>Фокус: '+t.features.daily_focus_limit+'/день<br>Семья: '+t.features.family_members+' чел.<br>История: '+t.features.history_depth+' записей</div></div>'
-    ).join('');
+    document.getElementById('tiers-list').innerHTML=tiers.map(t=>{
+      const isCurrent=profile&&profile.subscription_tier===t.tier_id;
+      const isFree=t.tier_id==='free';
+      let btns='';
+      if(!isFree&&!isCurrent){
+        btns='<div class="flex mt16">'
+          +'<button class="btn btn-gold flex1 btn-sm" onclick="subscribe(\''+t.tier_id+'\',\'month\')">'+t.price_monthly_rub+' &#8381;/мес</button>'
+          +(t.price_yearly_rub?'<button class="btn btn-sec flex1 btn-sm" onclick="subscribe(\''+t.tier_id+'\',\'year\')">'+t.price_yearly_rub+' &#8381;/год</button>':'')
+          +'</div>';
+      }else if(isCurrent&&!isFree){
+        btns='<div class="mt16 center"><span class="badge">Текущий план</span></div>';
+      }
+      return '<div class="card"'+(isCurrent?' style="border:1px solid var(--gold);"':'')+'>'
+        +'<div class="gold" style="font-size:1.1rem;">'+t.display_name+' '+(t.price_monthly_rub?t.price_monthly_rub+' &#8381;/мес':'бесплатно')+'</div>'
+        +'<div class="txt2 mt16" style="font-size:0.85rem;">'
+        +(t.features.ads_free?'&#10003; Без рекламы':'&#10007; С рекламой')
+        +'<br>Гороскопов/день: '+t.features.daily_general_limit
+        +'<br>Фокус: '+t.features.daily_focus_limit+'/день'
+        +'<br>Семья: '+t.features.family_members+' чел.'
+        +'<br>История: '+t.features.history_depth+' записей'
+        +'</div>'
+        +btns
+        +'</div>';
+    }).join('');
+  }catch(e){toast(e.message);}
+}
+
+async function subscribe(tierId,period){
+  try{
+    const r=await api('/subscription/subscribe','POST',{tier_id:tierId,period:period});
+    toast(r.message);
+    await loadProfile();
+    loadTiers();
+  }catch(e){toast(e.message);}
+}
+
+async function cancelSub(){
+  if(!confirm('Отменить подписку? Доступ сохранится до конца оплаченного периода.'))return;
+  try{
+    const r=await api('/subscription/cancel','POST');
+    toast(r.message);
+    await loadProfile();
+    loadTiers();
   }catch(e){toast(e.message);}
 }
 
