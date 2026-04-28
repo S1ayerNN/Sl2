@@ -27,7 +27,6 @@ class InterestCategory(str, PyEnum):
 class Gender(str, PyEnum):
     MALE = "male"
     FEMALE = "female"
-    OTHER = "other"
 
 
 # Family member relationship types
@@ -72,6 +71,9 @@ class User(Base):
     gender: Mapped[str] = mapped_column(String(20))  # Gender enum value
     zodiac_sign: Mapped[str] = mapped_column(String(20))  # Auto-calculated
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Profession (optional, encrypted PII)
+    profession_encrypted: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Interests - ONLY predefined categories from InterestCategory enum
     # Stored as array of enum string values
@@ -130,9 +132,10 @@ class User(Base):
             "name_encrypted": 15,
             "birth_date": 15,
             "gender": 10,
-            "birth_time": 15,
-            "birth_place_encrypted": 15,
+            "birth_time": 10,
+            "birth_place_encrypted": 10,
             "email_encrypted": 10,
+            "profession_encrypted": 10,
             "interests": 20,
         }
         score = 0

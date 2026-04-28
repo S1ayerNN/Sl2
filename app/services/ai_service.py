@@ -62,6 +62,7 @@ def _build_profile_context(
     name: str,
     birth_time=None,
     birth_place: str = None,
+    profession: str = None,
     interests: list[str] = None,
 ) -> str:
     """Build user profile context for the prompt.
@@ -84,6 +85,11 @@ def _build_profile_context(
     if birth_place:
         context_parts.append(
             f"Место рождения: {sanitize_for_prompt(birth_place, max_length=200)}"
+        )
+
+    if profession:
+        context_parts.append(
+            f"Профессия: {sanitize_for_prompt(profession, max_length=100)}"
         )
 
     if interests:
@@ -126,6 +132,7 @@ def build_full_prompt(
     target_date: date,
     birth_time=None,
     birth_place: str = None,
+    profession: str = None,
     interests: list[str] = None,
     history: list[Horoscope] = None,
 ) -> tuple[str, str]:
@@ -140,6 +147,7 @@ def build_full_prompt(
         name=name,
         birth_time=birth_time,
         birth_place=birth_place,
+        profession=profession,
         interests=interests,
     )
     history_context = _build_history_context(history or [])
@@ -166,6 +174,7 @@ async def generate_horoscope_for_user(
     """Generate a personalized horoscope for the user."""
     name = decrypt_pii(user.name_encrypted)
     birth_place = decrypt_pii(user.birth_place_encrypted) if user.birth_place_encrypted else None
+    profession = decrypt_pii(user.profession_encrypted) if user.profession_encrypted else None
 
     return await _generate(
         zodiac_sign=user.zodiac_sign,
@@ -173,6 +182,7 @@ async def generate_horoscope_for_user(
         name=name,
         birth_time=user.birth_time,
         birth_place=birth_place,
+        profession=profession,
         interests=user.interests or [],
         target_date=target_date,
         history=history,
@@ -195,6 +205,7 @@ async def generate_horoscope_for_family_member(
         name=name,
         birth_time=member.birth_time,
         birth_place=None,
+        profession=None,
         interests=member.interests or [],
         target_date=target_date,
         history=history,
@@ -208,6 +219,7 @@ async def _generate(
     name: str,
     birth_time,
     birth_place: str | None,
+    profession: str | None,
     interests: list[str],
     target_date: date,
     history: list[Horoscope],
@@ -227,6 +239,7 @@ async def _generate(
         target_date=target_date,
         birth_time=birth_time,
         birth_place=birth_place,
+        profession=profession,
         interests=interests,
         history=history,
     )

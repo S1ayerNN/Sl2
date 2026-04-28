@@ -3,532 +3,561 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MyAstro - AI Horoscope</title>
+<title>MyAstro</title>
 <style>
-:root {
-  --bg-primary: #0f0f23;
-  --bg-card: #1a1a2e;
-  --bg-elevated: #232342;
-  --accent-gold: #e2b714;
-  --accent-purple: #7b2ff7;
-  --accent-blue: #4361ee;
-  --text-primary: #f5f5f5;
-  --text-secondary: #8b8b9e;
-  --success: #06d6a0;
-  --danger: #ef476f;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-  max-width: 480px;
-  margin: 0 auto;
-}
-.screen { display: none; padding: 16px; min-height: 100vh; }
-.screen.active { display: block; }
-h1 { font-size: 1.5rem; font-weight: 300; margin-bottom: 8px; }
-h2 { font-size: 1.2rem; font-weight: 400; color: var(--text-secondary); margin-bottom: 16px; }
-.card {
-  background: var(--bg-card);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 12px;
-}
-.btn {
-  display: block;
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent-gold), #d4a00a);
-  color: #000;
-}
-.btn-secondary {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  border: 1px solid var(--accent-purple);
-}
-.btn-success { background: var(--success); color: #000; }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-small {
-  display: inline-block;
-  width: auto;
-  padding: 8px 20px;
-  font-size: 0.9rem;
-}
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-input, select {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--bg-elevated);
-  border-radius: 12px;
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  font-size: 1rem;
-  margin-bottom: 12px;
-}
-input:focus, select:focus {
-  outline: none;
-  border-color: var(--accent-purple);
-}
-.zodiac-icon { font-size: 3rem; text-align: center; margin: 20px 0; }
-.text-secondary { color: var(--text-secondary); }
-.text-gold { color: var(--accent-gold); }
-.text-center { text-align: center; }
-.mb-8 { margin-bottom: 8px; }
-.mb-16 { margin-bottom: 16px; }
-.mt-16 { margin-top: 16px; }
-.flex { display: flex; gap: 8px; }
-.flex-1 { flex: 1; }
-.tag {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 20px;
-  background: var(--bg-elevated);
-  font-size: 0.85rem;
-  margin: 4px;
-  cursor: pointer;
-  border: 1px solid transparent;
-}
-.tag.selected {
-  border-color: var(--accent-gold);
-  background: rgba(226,183,20,0.15);
-}
-.horoscope-text {
-  line-height: 1.7;
-  font-size: 1.05rem;
-  white-space: pre-wrap;
-}
-.progress-bar {
-  height: 6px;
-  background: var(--bg-elevated);
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 8px 0;
-}
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent-purple), var(--accent-gold));
-  border-radius: 3px;
-  transition: width 0.3s;
-}
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: var(--text-secondary);
-}
-.spinner {
-  display: inline-block;
-  width: 40px; height: 40px;
-  border: 3px solid var(--bg-elevated);
-  border-top-color: var(--accent-gold);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  background: var(--bg-card);
-  display: flex;
-  border-top: 1px solid var(--bg-elevated);
-  z-index: 100;
-}
-.nav-item {
-  flex: 1;
-  text-align: center;
-  padding: 10px 0;
-  cursor: pointer;
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-}
-.nav-item.active { color: var(--accent-gold); }
-.nav-item span { display: block; font-size: 1.3rem; margin-bottom: 2px; }
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  background: var(--accent-purple);
-}
-.toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-elevated);
-  padding: 12px 24px;
-  border-radius: 12px;
-  border: 1px solid var(--accent-purple);
-  z-index: 200;
-  display: none;
-}
+:root{--bg:#0f0f23;--card:#1a1a2e;--elev:#232342;--gold:#e2b714;--purple:#7b2ff7;--blue:#4361ee;--txt:#f5f5f5;--txt2:#8b8b9e;--ok:#06d6a0;--err:#ef476f}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;max-width:520px;margin:0 auto}
+.screen{display:none;padding:16px;padding-top:60px;min-height:100vh}
+.screen.active{display:block}
+/* Top bar */
+.topbar{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;height:52px;background:var(--card);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100;border-bottom:1px solid var(--elev)}
+.topbar-title{font-size:1.1rem;font-weight:300;letter-spacing:3px;color:var(--gold)}
+.topbar-icons{display:flex;gap:12px}
+.topbar-icon{font-size:1.4rem;cursor:pointer;opacity:0.7}
+.topbar-icon:hover{opacity:1}
+/* Drawer */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200}
+.drawer-overlay.open{display:block}
+.drawer{position:fixed;top:0;right:-280px;width:280px;height:100%;background:var(--card);z-index:201;transition:right 0.3s;padding:20px;padding-top:60px;overflow-y:auto}
+.drawer.open{right:0}
+.drawer-close{position:absolute;top:16px;right:16px;font-size:1.5rem;cursor:pointer;color:var(--txt2)}
+.drawer-item{padding:12px 0;border-bottom:1px solid var(--elev);cursor:pointer;display:flex;align-items:center;gap:10px}
+.drawer-item:hover{color:var(--gold)}
+.drawer-item.active{color:var(--gold)}
+.drawer-section{color:var(--txt2);font-size:0.8rem;text-transform:uppercase;margin-top:16px;margin-bottom:4px;letter-spacing:1px}
+/* Common */
+h1{font-size:1.4rem;font-weight:300;margin-bottom:8px}
+h2{font-size:1.1rem;font-weight:400;color:var(--txt2);margin-bottom:12px}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:12px;font-size:1rem;cursor:pointer;margin-bottom:8px;font-weight:500}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#d4a00a);color:#000}
+.btn-sec{background:var(--elev);color:var(--txt);border:1px solid var(--purple)}
+.btn-ok{background:var(--ok);color:#000}
+.btn-err{background:var(--err);color:#fff}
+.btn-sm{display:inline-block;width:auto;padding:8px 20px;font-size:0.9rem}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+input,select{width:100%;padding:11px;border:1px solid var(--elev);border-radius:12px;background:var(--elev);color:var(--txt);font-size:1rem;margin-bottom:10px}
+input:focus,select:focus{outline:none;border-color:var(--purple)}
+.zodiac-big{font-size:3rem;text-align:center;margin:16px 0}
+.txt2{color:var(--txt2)}.gold{color:var(--gold)}.center{text-align:center}
+.mb8{margin-bottom:8px}.mb16{margin-bottom:16px}.mt16{margin-top:16px}
+.flex{display:flex;gap:8px}.flex1{flex:1}
+.tag{display:inline-block;padding:6px 12px;border-radius:20px;background:var(--elev);font-size:0.85rem;margin:3px;cursor:pointer;border:1px solid transparent}
+.tag.sel{border-color:var(--gold);background:rgba(226,183,20,0.15)}
+.horo-text{line-height:1.7;font-size:1.02rem;white-space:pre-wrap}
+.pbar{height:6px;background:var(--elev);border-radius:3px;overflow:hidden;margin:6px 0}
+.pfill{height:100%;background:linear-gradient(90deg,var(--purple),var(--gold));border-radius:3px;transition:width .3s}
+.spinner{display:inline-block;width:36px;height:36px;border:3px solid var(--elev);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.75rem;background:var(--purple)}
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--elev);padding:10px 20px;border-radius:12px;border:1px solid var(--purple);z-index:300;display:none;font-size:0.9rem}
+label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 </style>
 </head>
 <body>
 
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-title">MYASTRO</div>
+  <div class="topbar-icons">
+    <span class="topbar-icon" id="tier-icon" onclick="showSection('subscription')">&#11088;</span>
+    <span class="topbar-icon" onclick="toggleDrawer()">&#9776;</span>
+  </div>
+</div>
+
+<!-- Drawer (Right side menu) -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="toggleDrawer()"></div>
+<div class="drawer" id="drawer">
+  <span class="drawer-close" onclick="toggleDrawer()">&times;</span>
+  
+  <div class="drawer-section">Разделы</div>
+  <div class="drawer-item active" data-section="horoscope" onclick="showSection('horoscope')">&#128302; Гороскоп</div>
+  <div class="drawer-item" data-section="history" onclick="showSection('history')">&#128220; История</div>
+  <div class="drawer-item" data-section="family" onclick="showSection('family')">&#128106; Семья</div>
+  
+  <div class="drawer-section">Будущие разделы</div>
+  <div class="drawer-item txt2">&#127183; Таро (скоро)</div>
+  <div class="drawer-item txt2">&#128722; Магазин (скоро)</div>
+  
+  <div class="drawer-section">Настройки</div>
+  <div class="drawer-item" data-section="profile" onclick="showSection('profile')">&#128100; Профиль и данные</div>
+  <div class="drawer-item" data-section="subscription" onclick="showSection('subscription')">&#11088; Подписка</div>
+  <div class="drawer-item" data-section="settings" onclick="showSection('settings')">&#9881; Настройки</div>
+  
+  <div style="margin-top:30px;">
+    <button class="btn btn-sec" onclick="logout()" style="font-size:0.9rem;">Выйти</button>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 
-<!-- AUTH SCREEN -->
-<div id="screen-auth" class="screen active">
-  <div class="text-center" style="padding-top: 80px;">
-    <div style="font-size: 4rem; margin-bottom: 16px;">&#10024; &#9734; &#10024;</div>
-    <h1 style="font-size: 2rem; font-weight: 200; letter-spacing: 8px;">MYASTRO</h1>
-    <h2>AI-гороскоп</h2>
-    <div style="margin-top: 60px;">
-      <button class="btn btn-primary" onclick="devLogin()">Войти (тестовый режим)</button>
-      <p class="text-secondary mt-16" style="font-size: 0.85rem;">
-        Тестовый вход создает демо-пользователя<br>
-        В продакшене: Telegram / Google авторизация
-      </p>
+<!-- AUTH -->
+<div id="screen-auth" class="screen active" style="padding-top:0;">
+  <div class="center" style="padding-top:100px;">
+    <div style="font-size:3.5rem;margin-bottom:12px;">&#10024; &#9734; &#10024;</div>
+    <div style="font-size:2rem;font-weight:200;letter-spacing:8px;color:var(--gold);">MYASTRO</div>
+    <div class="txt2 mb16">Персональный AI-астролог</div>
+    <div style="margin-top:50px;">
+      <button class="btn btn-gold" onclick="devLogin()">Войти (тестовый режим)</button>
+      <p class="txt2 mt16" style="font-size:0.82rem;">В продакшене: Telegram / Google</p>
     </div>
   </div>
 </div>
 
-<!-- MAIN SCREEN -->
-<div id="screen-main" class="screen">
-  <div class="flex mb-16" style="align-items: center; justify-content: space-between;">
-    <h1>MyAstro</h1>
-    <span id="tier-badge" class="badge">FREE</span>
+<!-- REGISTRATION -->
+<div id="screen-reg" class="screen" style="padding-top:80px;">
+  <!-- Step 1: Name -->
+  <div id="reg-step1">
+    <div class="txt2 mb8">Шаг 1 из 3</div>
+    <h1>Как тебя зовут?</h1>
+    <input type="text" id="reg-name" placeholder="Имя" class="mt16">
+    <button class="btn btn-gold mt16" onclick="regStep2()">Далее</button>
+  </div>
+  <!-- Step 2: Birth date -->
+  <div id="reg-step2" style="display:none;">
+    <div class="txt2 mb8">Шаг 2 из 3</div>
+    <h1>Когда ты родился(ась)?</h1>
+    <input type="date" id="reg-birth" class="mt16">
+    <div id="reg-zodiac" class="gold center mt16" style="font-size:1.2rem;"></div>
+    <button class="btn btn-gold mt16" onclick="regStep3()">Далее</button>
+  </div>
+  <!-- Step 3: Gender + optional details -->
+  <div id="reg-step3" style="display:none;">
+    <div class="txt2 mb8">Шаг 3 из 3</div>
+    <h1>Укажи пол</h1>
+    <div class="flex mt16">
+      <button class="btn btn-sec flex1" id="reg-male" onclick="selectGender('male')">&#9794; Мужской</button>
+      <button class="btn btn-sec flex1" id="reg-female" onclick="selectGender('female')">&#9792; Женский</button>
+    </div>
+    <div class="mt16">
+      <button class="btn btn-gold" id="btn-reg-finish" onclick="finishReg()" disabled>&#10024; Начать!</button>
+      <button class="btn btn-sec" onclick="showRegExtra()">&#9998; Дополнить данные</button>
+    </div>
+  </div>
+  <!-- Optional extra data (inline) -->
+  <div id="reg-extra" style="display:none;" class="card mt16">
+    <h2>Дополнительные данные</h2>
+    <p class="txt2 mb8" style="font-size:0.85rem;">Заполни сейчас или позже в профиле</p>
+    <label class="field">Время рождения</label>
+    <input type="time" id="reg-birth-time">
+    <label class="field">Место рождения</label>
+    <input type="text" id="reg-birth-place" placeholder="Москва">
+    <label class="field">Профессия</label>
+    <input type="text" id="reg-profession" placeholder="Дизайнер">
+    <label class="field">Email</label>
+    <input type="email" id="reg-email" placeholder="ivan@example.com">
+    <h2 class="mt16">Интересы</h2>
+    <div id="reg-interests"></div>
+    <div class="flex mt16">
+      <button class="btn btn-gold flex1" onclick="saveRegExtra()">Сохранить</button>
+      <button class="btn btn-sec flex1" onclick="hideRegExtra()">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOROSCOPE (default section) -->
+<div id="screen-horoscope" class="screen">
+  <div class="card center">
+    <div id="z-icon" class="zodiac-big"></div>
+    <div id="z-name" class="gold" style="font-size:1.2rem;"></div>
+    <div class="txt2" id="z-date"></div>
+    <span id="z-badge" class="badge mt16"></span>
   </div>
 
-  <div class="card text-center">
-    <div id="zodiac-icon" class="zodiac-icon"></div>
-    <div id="zodiac-name" class="text-gold" style="font-size: 1.3rem;"></div>
-    <div class="text-secondary" id="today-date"></div>
+  <div id="horo-area">
+    <button class="btn btn-gold" id="btn-gen" onclick="genHoro()">&#128302; Получить гороскоп</button>
   </div>
 
-  <div id="horoscope-area">
-    <button class="btn btn-primary" id="btn-generate" onclick="generateHoroscope()">
-      &#128302; Получить гороскоп на сегодня
-    </button>
-  </div>
-
-  <div id="horoscope-result" style="display:none;">
+  <div id="horo-result" style="display:none;">
     <div class="card">
-      <div class="flex mb-8" style="justify-content: space-between; align-items: center;">
-        <span class="text-secondary" id="result-type">Общий</span>
-        <span class="text-secondary" id="result-model" style="font-size:0.75rem;"></span>
+      <div class="flex mb8" style="justify-content:space-between;align-items:center;">
+        <span class="txt2" id="res-type"></span>
+        <span class="txt2" id="res-model" style="font-size:0.72rem;"></span>
       </div>
-      <div class="horoscope-text" id="result-text"></div>
+      <div class="horo-text" id="res-text"></div>
     </div>
     <div class="flex">
-      <button class="btn btn-success flex-1 btn-small" id="btn-like" onclick="sendFeedback('like')">&#128077; Нравится</button>
-      <button class="btn btn-danger flex-1 btn-small" id="btn-dislike" onclick="sendFeedback('dislike')">&#128078; Не нравится</button>
+      <button class="btn btn-ok flex1 btn-sm" id="btn-like" onclick="feedback('like')">&#128077; Нравится</button>
+      <button class="btn btn-err flex1 btn-sm" id="btn-dislike" onclick="feedback('dislike')">&#128078; Не нравится</button>
     </div>
-    <button class="btn btn-secondary mt-16" onclick="generateHoroscope()">&#128260; Сгенерировать заново</button>
   </div>
 
-  <div id="focus-section" class="mt-16" style="display:none;">
+  <div id="focus-sec" class="mt16" style="display:none;">
     <h2>&#127919; Фокусный прогноз</h2>
-    <div id="focus-interests"></div>
+    <div id="focus-tags"></div>
   </div>
 
-  <div id="profile-hint" class="card mt-16" style="display:none;">
-    <div class="text-secondary mb-8">Заполни профиль для точных прогнозов</div>
-    <div class="progress-bar"><div class="progress-fill" id="completeness-bar" style="width:0%"></div></div>
-    <div class="text-secondary" style="font-size:0.85rem;" id="completeness-text">0%</div>
+  <div id="hint-card" class="card mt16" style="display:none;">
+    <div class="txt2 mb8">Заполни профиль для точных прогнозов</div>
+    <div class="pbar"><div class="pfill" id="comp-bar" style="width:0%"></div></div>
+    <div class="txt2" style="font-size:0.82rem;" id="comp-txt">0%</div>
   </div>
-
-  <div style="height:80px;"></div>
 </div>
 
-<!-- HISTORY SCREEN -->
+<!-- HISTORY -->
 <div id="screen-history" class="screen">
-  <h1 class="mb-16">&#128220; История</h1>
-  <div id="history-list"></div>
-  <div style="height:80px;"></div>
+  <h1 class="mb16">&#128220; История</h1>
+  <div id="hist-list"></div>
 </div>
 
-<!-- PROFILE SCREEN -->
+<!-- FAMILY -->
+<div id="screen-family" class="screen">
+  <h1 class="mb16">&#128106; Семья</h1>
+  <div id="fam-list"></div>
+  <div id="fam-add" style="display:none;">
+    <button class="btn btn-sec" onclick="showAddFamily()">+ Добавить</button>
+  </div>
+  <div id="fam-form" style="display:none;" class="card">
+    <h2>Новый член семьи</h2>
+    <select id="fam-rel"><option value="">Кто это?</option></select>
+    <input type="text" id="fam-name" placeholder="Имя">
+    <input type="date" id="fam-birth">
+    <div class="flex mb8">
+      <button class="btn btn-sec flex1 btn-sm" id="fam-m" onclick="famGender('male')">&#9794; М</button>
+      <button class="btn btn-sec flex1 btn-sm" id="fam-f" onclick="famGender('female')">&#9792; Ж</button>
+    </div>
+    <div class="flex">
+      <button class="btn btn-gold flex1" onclick="addFamily()">Добавить</button>
+      <button class="btn btn-sec flex1" onclick="hideAddFamily()">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE -->
 <div id="screen-profile" class="screen">
-  <h1 class="mb-16">&#128100; Профиль</h1>
-
-  <div class="card text-center">
-    <div style="font-size:2.5rem;" id="profile-zodiac"></div>
-    <div class="text-gold" id="profile-name" style="font-size:1.2rem;"></div>
-    <div class="text-secondary" id="profile-sign"></div>
-    <div class="text-secondary" id="profile-birth"></div>
+  <h1 class="mb16">&#128100; Профиль</h1>
+  <div class="card center">
+    <div id="p-zodiac" style="font-size:2.5rem;"></div>
+    <div class="gold" id="p-name" style="font-size:1.1rem;"></div>
+    <div class="txt2" id="p-sign"></div>
+    <div class="txt2" id="p-birth"></div>
   </div>
-
   <div class="card">
-    <h2>&#9999;&#65039; Редактировать</h2>
-    <label class="text-secondary" style="font-size:0.85rem;">Время рождения (HH:MM)</label>
-    <input type="text" id="edit-birth-time" placeholder="14:30">
-    <label class="text-secondary" style="font-size:0.85rem;">Место рождения</label>
-    <input type="text" id="edit-birth-place" placeholder="Москва">
-    <label class="text-secondary" style="font-size:0.85rem;">Email</label>
-    <input type="email" id="edit-email" placeholder="ivan@example.com">
-
-    <h2 class="mt-16">&#127919; Интересы</h2>
-    <div id="interest-tags"></div>
-
-    <button class="btn btn-primary mt-16" onclick="saveProfile()">Сохранить</button>
+    <h2>&#9998; Данные</h2>
+    <label class="field">Время рождения</label>
+    <input type="text" id="ed-time" placeholder="14:30">
+    <label class="field">Место рождения</label>
+    <input type="text" id="ed-place" placeholder="Москва">
+    <label class="field">Профессия</label>
+    <input type="text" id="ed-prof" placeholder="Дизайнер">
+    <label class="field">Email</label>
+    <input type="email" id="ed-email" placeholder="ivan@example.com">
+    <h2 class="mt16">Интересы</h2>
+    <div id="int-tags"></div>
+    <button class="btn btn-gold mt16" onclick="saveProfile()">Сохранить</button>
   </div>
-
-  <div class="card">
-    <h2>&#11088; Подписка</h2>
-    <div id="subscription-info"></div>
-    <button class="btn btn-secondary mt-16" onclick="showTiers()">Сравнить тарифы</button>
-  </div>
-
-  <div id="tiers-modal" style="display:none;">
-    <div class="card" id="tiers-content"></div>
-  </div>
-
-  <div style="height:80px;"></div>
 </div>
 
-<!-- NAV -->
-<nav class="nav">
-  <div class="nav-item active" onclick="showScreen('main')"><span>&#128302;</span>Главная</div>
-  <div class="nav-item" onclick="showScreen('history')"><span>&#128220;</span>История</div>
-  <div class="nav-item" onclick="showScreen('profile')"><span>&#128100;</span>Профиль</div>
-</nav>
+<!-- SUBSCRIPTION -->
+<div id="screen-subscription" class="screen">
+  <h1 class="mb16">&#11088; Подписка</h1>
+  <div id="tiers-list"></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="screen-settings" class="screen">
+  <h1 class="mb16">&#9881; Настройки</h1>
+  <div class="card">
+    <div class="drawer-item" onclick="toast('Скоро!')">&#128276; Уведомления</div>
+    <div class="drawer-item" onclick="toast('Скоро!')">&#127763; Темная / светлая тема</div>
+    <div class="drawer-item" onclick="toast('Скоро!')">&#127760; Язык</div>
+  </div>
+  <div class="card">
+    <div class="txt2 mb8">Версия 0.1.0 (MVP)</div>
+    <div class="txt2" style="font-size:0.8rem;">Политика конфиденциальности</div>
+  </div>
+</div>
 
 <script>
-const API = '/api/v1';
-let token = localStorage.getItem('myastro_token');
-let currentHoroscopeId = null;
-let profileData = null;
-let interestCatalog = [];
+const API='/api/v1';
+let token=localStorage.getItem('at');
+let curHoroId=null, profile=null, catalog=[], regGender='', famGenderVal='';
 
-// --- Auth ---
-async function devLogin() {
-  try {
-    const res = await fetch(`${API}/auth/dev-login`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
-    if (!res.ok) throw new Error('Login failed');
-    const data = await res.json();
-    token = data.access_token;
-    localStorage.setItem('myastro_token', token);
-    await loadProfile();
-    showScreen('main');
-  } catch(e) { toast('Ошибка входа: ' + e.message); }
+// Drawer
+function toggleDrawer(){
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('drawer-overlay').classList.toggle('open');
 }
 
-// --- API Helper ---
-async function api(path, method='GET', body=null) {
-  const opts = {method, headers: {'Authorization': `Bearer ${token}`, 'Content-Type':'application/json'}};
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(`${API}${path}`, opts);
-  if (res.status === 401) { localStorage.removeItem('myastro_token'); showScreen('auth'); throw new Error('Unauthorized'); }
-  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.detail || `Error ${res.status}`); }
-  if (res.status === 204) return null;
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
-
-// --- Navigation ---
-function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(`screen-${name}`).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach((n,i) => {
-    n.classList.toggle('active', ['main','history','profile'][i] === name);
+// Sections (inside main app, not auth/reg)
+function showSection(name){
+  toggleDrawer();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.drawer-item[data-section]').forEach(d=>{
+    d.classList.toggle('active',d.dataset.section===name);
   });
-  if (name === 'history') loadHistory();
-  if (name === 'profile') loadProfileScreen();
-  if (name === 'main') loadMain();
+  if(name==='history')loadHistory();
+  if(name==='family')loadFamily();
+  if(name==='profile')loadProfileScreen();
+  if(name==='horoscope')loadMain();
+  if(name==='subscription')loadTiers();
 }
 
-// --- Main Screen ---
-async function loadMain() {
-  if (!profileData) await loadProfile();
-  const zodiacEmoji = {'Овен':'&#9800;','Телец':'&#9801;','Близнецы':'&#9802;','Рак':'&#9803;','Лев':'&#9804;','Дева':'&#9805;','Весы':'&#9806;','Скорпион':'&#9807;','Стрелец':'&#9808;','Козерог':'&#9809;','Водолей':'&#9810;','Рыбы':'&#9811;'};
-  document.getElementById('zodiac-icon').innerHTML = zodiacEmoji[profileData.zodiac_sign] || '&#9734;';
-  document.getElementById('zodiac-name').textContent = profileData.zodiac_sign;
-  document.getElementById('today-date').textContent = new Date().toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('tier-badge').textContent = profileData.subscription_tier.toUpperCase();
-  document.getElementById('completeness-bar').style.width = profileData.profile_completeness + '%';
-  document.getElementById('completeness-text').textContent = profileData.profile_completeness + '%';
-  document.getElementById('profile-hint').style.display = profileData.profile_completeness < 100 ? 'block' : 'none';
-
-  // Check if today's horoscope exists
-  try {
-    const today = await api('/horoscope/today');
-    if (today) {
-      showHoroscope(today);
-    }
-  } catch(e) {}
-
-  // Load focus interests if available
-  try {
-    const limits = await api('/horoscope/limits');
-    if (limits.focus_sphere_enabled && interestCatalog.length) {
-      document.getElementById('focus-section').style.display = 'block';
-      renderFocusInterests();
-    }
-  } catch(e) {}
+// Auth
+async function devLogin(){
+  try{
+    const r=await fetch(API+'/auth/dev-login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    if(!r.ok)throw new Error('fail');
+    const d=await r.json();
+    token=d.access_token;
+    localStorage.setItem('at',token);
+    await loadProfile();
+    showSection('horoscope');
+    document.querySelector('.topbar').style.display='flex';
+  }catch(e){toast('Ошибка: '+e.message);}
 }
 
-// --- Horoscope ---
-async function generateHoroscope(type='general', focusId=null) {
-  document.getElementById('btn-generate').disabled = true;
-  document.getElementById('btn-generate').textContent = 'Генерация...';
-  document.getElementById('horoscope-result').style.display = 'none';
+function logout(){
+  localStorage.removeItem('at');
+  token=null;profile=null;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-auth').classList.add('active');
+  document.querySelector('.topbar').style.display='none';
+  toggleDrawer();
+}
 
-  try {
-    const body = {horoscope_type: type};
-    if (focusId) body.focus_interest_id = focusId;
-    const h = await api('/horoscope/generate', 'POST', body);
-    showHoroscope(h);
-    toast('Гороскоп готов!');
-  } catch(e) {
-    toast(e.message);
+// API
+async function api(p,m='GET',b=null){
+  const o={method:m,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
+  if(b)o.body=JSON.stringify(b);
+  const r=await fetch(API+p,o);
+  if(r.status===401){logout();throw new Error('Unauthorized');}
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Error '+r.status);}
+  if(r.status===204)return null;
+  const t=await r.text();return t?JSON.parse(t):null;
+}
+
+// Registration
+function calcZodiac(m,d){
+  const signs=['Козерог','Водолей','Рыбы','Овен','Телец','Близнецы','Рак','Лев','Дева','Весы','Скорпион','Стрелец','Козерог'];
+  const days=[20,19,21,20,21,21,23,23,23,23,22,22];
+  return d>=days[m-1]?signs[m]:signs[m-1];
+}
+
+function regStep2(){
+  const n=document.getElementById('reg-name').value.trim();
+  if(n.length<2){toast('Введи имя (мин 2 символа)');return;}
+  document.getElementById('reg-step1').style.display='none';
+  document.getElementById('reg-step2').style.display='block';
+  document.getElementById('reg-birth').addEventListener('change',function(){
+    const d=new Date(this.value);
+    if(d){const z=calcZodiac(d.getMonth()+1,d.getDate());document.getElementById('reg-zodiac').textContent=z;}
+  });
+}
+
+function regStep3(){
+  if(!document.getElementById('reg-birth').value){toast('Укажи дату рождения');return;}
+  document.getElementById('reg-step2').style.display='none';
+  document.getElementById('reg-step3').style.display='block';
+  // Render interest tags for extra section
+  const c=document.getElementById('reg-interests');
+  c.innerHTML=catalog.map(i=>'<span class="tag" data-id="'+i.id+'" onclick="this.classList.toggle(\'sel\')">'+(i.icon||'')+' '+i.label_ru+'</span>').join('');
+}
+
+function selectGender(g){
+  regGender=g;
+  document.getElementById('reg-male').classList.toggle('tag',g!=='male');
+  document.getElementById('reg-female').classList.toggle('tag',g!=='female');
+  document.getElementById('reg-male').style.borderColor=g==='male'?'var(--gold)':'';
+  document.getElementById('reg-female').style.borderColor=g==='female'?'var(--gold)':'';
+  document.getElementById('btn-reg-finish').disabled=false;
+}
+
+function showRegExtra(){document.getElementById('reg-extra').style.display='block';}
+function hideRegExtra(){document.getElementById('reg-extra').style.display='none';}
+function saveRegExtra(){hideRegExtra();toast('Данные сохранены, нажми "Начать!"');}
+
+async function finishReg(){
+  if(!regGender){toast('Выбери пол');return;}
+  // TODO: when real auth, this would be part of auth flow
+  // For dev, we just save extra data to profile after login
+  await devLogin();
+  // Save extra fields if filled
+  const body={};
+  const bt=document.getElementById('reg-birth-time').value;
+  const bp=document.getElementById('reg-birth-place').value.trim();
+  const pr=document.getElementById('reg-profession').value.trim();
+  const em=document.getElementById('reg-email').value.trim();
+  const ints=Array.from(document.querySelectorAll('#reg-interests .sel')).map(t=>t.dataset.id);
+  if(bt)body.birth_time=bt;
+  if(bp)body.birth_place=bp;
+  if(pr)body.profession=pr;
+  if(em)body.email=em;
+  if(ints.length)body.interests=ints;
+  if(Object.keys(body).length){
+    try{await api('/profile/me','PATCH',body);}catch(e){}
   }
-  document.getElementById('btn-generate').disabled = false;
-  document.getElementById('btn-generate').textContent = '&#128302; Получить гороскоп на сегодня';
+  await loadProfile();
+  showSection('horoscope');
 }
 
-function showHoroscope(h) {
-  currentHoroscopeId = h.id;
-  document.getElementById('result-text').textContent = h.horoscope_text;
-  document.getElementById('result-model').textContent = h.ai_model_used;
-  const typeLabels = {general:'Общий',focused:'Фокусный',regeneration:'Пересоздание'};
-  let label = typeLabels[h.horoscope_type] || h.horoscope_type;
-  if (h.focus_interest_id) label += ` (${h.focus_interest_id})`;
-  document.getElementById('result-type').textContent = label;
-  document.getElementById('horoscope-result').style.display = 'block';
-  document.getElementById('btn-like').disabled = !!h.feedback;
-  document.getElementById('btn-dislike').disabled = !!h.feedback;
-  if (h.feedback === 'like') document.getElementById('btn-like').style.opacity = '1';
-  if (h.feedback === 'dislike') document.getElementById('btn-dislike').style.opacity = '1';
+// Main
+const zodiacEmoji={'Овен':'&#9800;','Телец':'&#9801;','Близнецы':'&#9802;','Рак':'&#9803;','Лев':'&#9804;','Дева':'&#9805;','Весы':'&#9806;','Скорпион':'&#9807;','Стрелец':'&#9808;','Козерог':'&#9809;','Водолей':'&#9810;','Рыбы':'&#9811;'};
+
+async function loadMain(){
+  if(!profile)await loadProfile();
+  document.getElementById('z-icon').innerHTML=zodiacEmoji[profile.zodiac_sign]||'&#9734;';
+  document.getElementById('z-name').textContent=profile.zodiac_sign;
+  document.getElementById('z-date').textContent=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('z-badge').textContent=profile.subscription_tier.toUpperCase();
+  document.getElementById('comp-bar').style.width=profile.profile_completeness+'%';
+  document.getElementById('comp-txt').textContent=profile.profile_completeness+'%';
+  document.getElementById('hint-card').style.display=profile.profile_completeness<100?'block':'none';
+  try{const t=await api('/horoscope/today');if(t)showHoro(t);}catch(e){}
+  try{
+    const lim=await api('/horoscope/limits');
+    if(lim.focus_sphere_enabled&&catalog.length){
+      document.getElementById('focus-sec').style.display='block';
+      document.getElementById('focus-tags').innerHTML=catalog.map(i=>'<button class="tag" onclick="genHoro(\'focused\',\''+i.id+'\')">'+(i.icon||'')+' '+i.label_ru+'</button>').join('');
+    }else{document.getElementById('focus-sec').style.display='none';}
+  }catch(e){}
 }
 
-async function sendFeedback(type) {
-  if (!currentHoroscopeId) return;
-  try {
-    await api(`/horoscope/${currentHoroscopeId}/feedback`, 'POST', {feedback: type});
-    document.getElementById('btn-like').disabled = true;
-    document.getElementById('btn-dislike').disabled = true;
-    toast(type === 'like' ? 'Спасибо! Учтём при следующей генерации' : 'Учтём! Следующий будет лучше');
-  } catch(e) { toast(e.message); }
+async function genHoro(type='general',focusId=null){
+  const btn=document.getElementById('btn-gen');
+  btn.disabled=true;btn.textContent='Генерация...';
+  document.getElementById('horo-result').style.display='none';
+  try{
+    const b={horoscope_type:type};if(focusId)b.focus_interest_id=focusId;
+    const h=await api('/horoscope/generate','POST',b);
+    showHoro(h);toast('Готово!');
+  }catch(e){toast(e.message);}
+  btn.disabled=false;btn.innerHTML='&#128302; Получить гороскоп';
 }
 
-function renderFocusInterests() {
-  const container = document.getElementById('focus-interests');
-  container.innerHTML = interestCatalog.map(i =>
-    `<button class="tag" onclick="generateHoroscope('focused','${i.id}')">${i.icon || ''} ${i.label_ru}</button>`
-  ).join('');
+function showHoro(h){
+  curHoroId=h.id;
+  document.getElementById('res-text').textContent=h.horoscope_text;
+  document.getElementById('res-model').textContent=h.ai_model_used;
+  const labels={general:'Общий',focused:'Фокусный',regeneration:'Пересоздание'};
+  let l=labels[h.horoscope_type]||h.horoscope_type;
+  if(h.focus_interest_id)l+=' ('+h.focus_interest_id+')';
+  document.getElementById('res-type').textContent=l;
+  document.getElementById('horo-result').style.display='block';
+  document.getElementById('btn-like').disabled=!!h.feedback;
+  document.getElementById('btn-dislike').disabled=!!h.feedback;
 }
 
-// --- History ---
-async function loadHistory() {
-  try {
-    const data = await api('/horoscope/history');
-    const list = document.getElementById('history-list');
-    if (!data.horoscopes.length) {
-      list.innerHTML = '<div class="card text-center text-secondary">Пока нет гороскопов</div>';
-      return;
-    }
-    list.innerHTML = data.horoscopes.map(h => {
-      const fb = h.feedback === 'like' ? '&#128077;' : h.feedback === 'dislike' ? '&#128078;' : '';
-      const typeIcon = h.horoscope_type === 'focused' ? '&#127919;' : '&#128302;';
-      return `<div class="card">
-        <div class="flex mb-8" style="justify-content:space-between;">
-          <span>${typeIcon} ${h.horoscope_date}</span><span>${fb}</span>
-        </div>
-        <div class="horoscope-text" style="font-size:0.95rem;">${h.horoscope_text.substring(0,200)}...</div>
-      </div>`;
+async function feedback(t){
+  if(!curHoroId)return;
+  try{
+    await api('/horoscope/'+curHoroId+'/feedback','POST',{feedback:t});
+    document.getElementById('btn-like').disabled=true;
+    document.getElementById('btn-dislike').disabled=true;
+    toast(t==='like'?'Спасибо!':'Учтем!');
+  }catch(e){toast(e.message);}
+}
+
+// History
+async function loadHistory(){
+  try{
+    const d=await api('/horoscope/history');
+    const el=document.getElementById('hist-list');
+    if(!d.horoscopes.length){el.innerHTML='<div class="card center txt2">Пока нет гороскопов</div>';return;}
+    el.innerHTML=d.horoscopes.map(h=>{
+      const fb=h.feedback==='like'?'&#128077;':h.feedback==='dislike'?'&#128078;':'';
+      const ic=h.horoscope_type==='focused'?'&#127919;':'&#128302;';
+      return '<div class="card"><div class="flex mb8" style="justify-content:space-between;"><span>'+ic+' '+h.horoscope_date+'</span><span>'+fb+'</span></div><div class="horo-text" style="font-size:0.92rem;">'+h.horoscope_text.substring(0,200)+'...</div></div>';
     }).join('');
-  } catch(e) { toast(e.message); }
+  }catch(e){toast(e.message);}
 }
 
-// --- Profile ---
-async function loadProfile() {
-  profileData = await api('/profile/me');
-  // Load interest catalog
-  try {
-    const opts = await api('/profile/options');
-    interestCatalog = opts.interests || [];
-  } catch(e) {}
+// Family
+async function loadFamily(){
+  try{
+    const members=await api('/profile/family');
+    const el=document.getElementById('fam-list');
+    el.innerHTML=members.map(m=>'<div class="card"><div class="gold">'+m.name+'</div><div class="txt2">'+m.relation+' &middot; '+m.zodiac_sign+' &middot; '+m.birth_date+'</div><button class="btn btn-sec btn-sm mt16" onclick="genHoroFor(\''+m.id+'\')">&#128302; Гороскоп</button></div>').join('');
+    const lim=await api('/horoscope/limits');
+    document.getElementById('fam-add').style.display=lim.family_members_limit>0?'block':'none';
+    // Populate relation select
+    const sel=document.getElementById('fam-rel');
+    if(sel.options.length<=1){
+      const opts=await api('/profile/options');
+      (opts.relations||[]).forEach(r=>{const o=document.createElement('option');o.value=r.value;o.textContent=r.label_ru;sel.appendChild(o);});
+    }
+  }catch(e){toast(e.message);}
 }
 
-function loadProfileScreen() {
-  if (!profileData) return;
-  const zodiacEmoji = {'Овен':'&#9800;','Телец':'&#9801;','Близнецы':'&#9802;','Рак':'&#9803;','Лев':'&#9804;','Дева':'&#9805;','Весы':'&#9806;','Скорпион':'&#9807;','Стрелец':'&#9808;','Козерог':'&#9809;','Водолей':'&#9810;','Рыбы':'&#9811;'};
-  document.getElementById('profile-zodiac').innerHTML = zodiacEmoji[profileData.zodiac_sign] || '';
-  document.getElementById('profile-name').textContent = profileData.name;
-  document.getElementById('profile-sign').textContent = profileData.zodiac_sign;
-  document.getElementById('profile-birth').textContent = profileData.birth_date;
-  document.getElementById('edit-birth-time').value = profileData.birth_time || '';
-  document.getElementById('edit-birth-place').value = profileData.birth_place || '';
-  document.getElementById('edit-email').value = profileData.email || '';
-  document.getElementById('subscription-info').innerHTML =
-    `Тариф: <span class="text-gold">${profileData.subscription_tier.toUpperCase()}</span><br>
-     ${profileData.is_premium ? 'Активна до: ' + new Date(profileData.subscription_expires).toLocaleDateString('ru') : ''}`;
+function showAddFamily(){document.getElementById('fam-form').style.display='block';}
+function hideAddFamily(){document.getElementById('fam-form').style.display='none';}
+function famGender(g){
+  famGenderVal=g;
+  document.getElementById('fam-m').style.borderColor=g==='male'?'var(--gold)':'';
+  document.getElementById('fam-f').style.borderColor=g==='female'?'var(--gold)':'';
+}
 
-  // Interest tags
-  const container = document.getElementById('interest-tags');
-  container.innerHTML = interestCatalog.map(i => {
-    const sel = (profileData.interests || []).includes(i.id) ? 'selected' : '';
-    return `<span class="tag ${sel}" data-id="${i.id}" onclick="toggleInterest(this)">${i.icon || ''} ${i.label_ru}</span>`;
+async function addFamily(){
+  if(!famGenderVal||!document.getElementById('fam-name').value||!document.getElementById('fam-birth').value||!document.getElementById('fam-rel').value){toast('Заполни все поля');return;}
+  try{
+    await api('/profile/family','POST',{
+      name:document.getElementById('fam-name').value,
+      relation:document.getElementById('fam-rel').value,
+      birth_date:document.getElementById('fam-birth').value,
+      gender:famGenderVal
+    });
+    hideAddFamily();loadFamily();toast('Добавлен!');
+  }catch(e){toast(e.message);}
+}
+
+async function genHoroFor(mid){
+  try{
+    const h=await api('/horoscope/generate','POST',{family_member_id:mid});
+    toast('Гороскоп для '+h.horoscope_text.substring(0,30)+'...');
+  }catch(e){toast(e.message);}
+}
+
+// Profile
+async function loadProfile(){
+  profile=await api('/profile/me');
+  try{const o=await api('/profile/options');catalog=o.interests||[];}catch(e){}
+}
+
+function loadProfileScreen(){
+  if(!profile)return;
+  document.getElementById('p-zodiac').innerHTML=zodiacEmoji[profile.zodiac_sign]||'';
+  document.getElementById('p-name').textContent=profile.name;
+  document.getElementById('p-sign').textContent=profile.zodiac_sign;
+  document.getElementById('p-birth').textContent=profile.birth_date;
+  document.getElementById('ed-time').value=profile.birth_time||'';
+  document.getElementById('ed-place').value=profile.birth_place||'';
+  document.getElementById('ed-prof').value=profile.profession||'';
+  document.getElementById('ed-email').value=profile.email||'';
+  document.getElementById('int-tags').innerHTML=catalog.map(i=>{
+    const s=(profile.interests||[]).includes(i.id)?'sel':'';
+    return '<span class="tag '+s+'" data-id="'+i.id+'" onclick="this.classList.toggle(\'sel\')">'+(i.icon||'')+' '+i.label_ru+'</span>';
   }).join('');
 }
 
-function toggleInterest(el) { el.classList.toggle('selected'); }
-
-async function saveProfile() {
-  const interests = Array.from(document.querySelectorAll('#interest-tags .tag.selected')).map(t => t.dataset.id);
-  const body = { interests };
-  const bt = document.getElementById('edit-birth-time').value.trim();
-  const bp = document.getElementById('edit-birth-place').value.trim();
-  const em = document.getElementById('edit-email').value.trim();
-  if (bt) body.birth_time = bt;
-  if (bp) body.birth_place = bp;
-  if (em) body.email = em;
-  try {
-    profileData = await api('/profile/me', 'PATCH', body);
-    toast('Профиль обновлен!');
-    loadProfileScreen();
-  } catch(e) { toast(e.message); }
+async function saveProfile(){
+  const ints=Array.from(document.querySelectorAll('#int-tags .sel')).map(t=>t.dataset.id);
+  const b={interests:ints};
+  const v=id=>document.getElementById(id).value.trim();
+  if(v('ed-time'))b.birth_time=v('ed-time');
+  if(v('ed-place'))b.birth_place=v('ed-place');
+  if(v('ed-prof'))b.profession=v('ed-prof');
+  if(v('ed-email'))b.email=v('ed-email');
+  try{profile=await api('/profile/me','PATCH',b);toast('Сохранено!');loadProfileScreen();}catch(e){toast(e.message);}
 }
 
-// --- Tiers ---
-async function showTiers() {
-  const modal = document.getElementById('tiers-modal');
-  if (modal.style.display === 'block') { modal.style.display = 'none'; return; }
-  try {
-    const tiers = await api('/profile/tiers');
-    document.getElementById('tiers-content').innerHTML = tiers.map(t =>
-      `<div class="mb-16" style="border-bottom:1px solid var(--bg-elevated);padding-bottom:12px;">
-        <div class="text-gold" style="font-size:1.1rem;">${t.display_name} ${t.price_monthly_rub ? t.price_monthly_rub + ' руб/мес' : 'бесплатно'}</div>
-        <div class="text-secondary" style="font-size:0.85rem;margin-top:4px;">
-          ${t.features.ads_free ? '&#10003; Без рекламы' : '&#10007; С рекламой'}<br>
-          Гороскопов/день: ${t.features.daily_general_limit}<br>
-          Фокус: ${t.features.daily_focus_limit}/день<br>
-          Семья: ${t.features.family_members} чел.<br>
-          История: ${t.features.history_depth} записей
-        </div>
-      </div>`
+// Tiers
+async function loadTiers(){
+  try{
+    const tiers=await api('/profile/tiers');
+    document.getElementById('tiers-list').innerHTML=tiers.map(t=>
+      '<div class="card"><div class="gold" style="font-size:1.1rem;">'+t.display_name+' '+(t.price_monthly_rub?t.price_monthly_rub+' &#8381;/мес':'бесплатно')+'</div><div class="txt2 mt16" style="font-size:0.85rem;">'+(t.features.ads_free?'&#10003; Без рекламы':'&#10007; С рекламой')+'<br>Гороскопов/день: '+t.features.daily_general_limit+'<br>Фокус: '+t.features.daily_focus_limit+'/день<br>Семья: '+t.features.family_members+' чел.<br>История: '+t.features.history_depth+' записей</div></div>'
     ).join('');
-    modal.style.display = 'block';
-  } catch(e) { toast(e.message); }
+  }catch(e){toast(e.message);}
 }
 
-// --- Utils ---
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 3000);
-}
+// Utils
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',3000);}
 
-// --- Init ---
-if (token) {
-  loadProfile().then(() => showScreen('main')).catch(() => showScreen('auth'));
-}
+// Init
+if(!token){document.querySelector('.topbar').style.display='none';}
+else{loadProfile().then(()=>showSection('horoscope')).catch(()=>{document.querySelector('.topbar').style.display='none';document.getElementById('screen-auth').classList.add('active');});}
 </script>
 </body>
 </html>

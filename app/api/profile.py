@@ -45,6 +45,7 @@ def _user_to_profile(user: User) -> UserProfile:
         birth_time=user.birth_time,
         birth_place=decrypt_pii(user.birth_place_encrypted) if user.birth_place_encrypted else None,
         email=decrypt_pii(user.email_encrypted) if user.email_encrypted else None,
+        profession=decrypt_pii(user.profession_encrypted) if user.profession_encrypted else None,
         avatar_url=user.avatar_url,
         interests=user.interests or [],
         subscription_tier=user.subscription_tier,
@@ -130,6 +131,15 @@ async def update_my_profile(
             )
         current_user.email_encrypted = encrypt_pii(email)
         current_user.email_hash = hash_identifier(email)
+
+    if update_data.profession is not None:
+        prof = update_data.profession.strip()
+        if len(prof) > 100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Profession must be under 100 characters",
+            )
+        current_user.profession_encrypted = encrypt_pii(prof) if prof else None
 
     if update_data.interests is not None:
         # Validate: ONLY active catalog interests allowed

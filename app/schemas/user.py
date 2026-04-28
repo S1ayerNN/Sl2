@@ -27,7 +27,6 @@ AVAILABLE_GENDERS = [
     for g, label in {
         Gender.MALE: "Мужской",
         Gender.FEMALE: "Женский",
-        Gender.OTHER: "Другой",
     }.items()
 ]
 
@@ -55,6 +54,7 @@ class UserProfile(BaseModel):
     birth_time: Optional[time] = None
     birth_place: Optional[str] = None  # Decrypted
     email: Optional[str] = None  # Decrypted
+    profession: Optional[str] = None  # Decrypted
     avatar_url: Optional[str] = None
 
     # Interests - only predefined categories
@@ -80,6 +80,7 @@ class UserProfileUpdate(BaseModel):
     birth_time: Optional[str] = None  # HH:MM format
     birth_place: Optional[str] = None
     email: Optional[str] = None
+    profession: Optional[str] = None  # Free text, max 100 chars
     # Interests MUST be from InterestCategory enum
     interests: Optional[list[str]] = None
 
