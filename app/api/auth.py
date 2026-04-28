@@ -9,11 +9,18 @@ from app.schemas.auth import (
     TokenResponse,
     UserRegistrationData,
 )
+from app.core.config import settings
 from app.services.auth_service import (
     authenticate_google,
     authenticate_telegram,
     refresh_tokens,
 )
+from app.services.zodiac_service import get_zodiac_sign
+from app.core.crypto import encrypt_pii
+from app.core.security import create_access_token, create_refresh_token
+from app.models.user import User
+from sqlalchemy import select
+from datetime import date
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -71,3 +78,56 @@ async def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
         )
+
+
+# --- Dev/Test Login (only available when DEBUG=true) ---
+
+
+class DevLoginRequest(BaseModel):
+    """Quick login for development/testing. Creates a test user if needed."""
+    name: str = "Test User"
+    birth_date: str = "1995-03-15"
+    gender: str = "male"
+
+
+from pydantic import BaseModel
+
+
+@router.post("/dev-login", response_model=TokenResponse)
+async def dev_login(
+    request: DevLoginRequest = DevLoginRequest(),
+    db: AsyncSession = Depends(get_db),
+):
+    """Development-only login. Creates/finds a test user and returns tokens.
+
+    Only available when DEBUG=true. DO NOT use in production.
+    """
+    if not settings.DEBUG:
+        raise HTTPException(status_code=403, detail="Dev login only available in DEBUG mode")
+
+    # Use a fixed test telegram_id
+    test_telegram_id = "dev_test_user_12345"
+
+    result = await db.execute(
+        select(User).where(User.telegram_id == test_telegram_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        birth = date.fromisoformat(request.birth_date)
+        user = User(
+            telegram_id=test_telegram_id,
+            name_encrypted=encrypt_pii(request.name),
+            birth_date=birth,
+            gender=request.gender,
+            zodiac_sign=get_zodiac_sign(birth),
+            interests=["love", "career", "health"],
+        )
+        user.profile_completeness = user.calculate_completeness()
+        db.add(user)
+        await db.flush()
+
+    return TokenResponse(
+        access_token=create_access_token(str(user.id)),
+        refresh_token=create_refresh_token(str(user.id)),
+    )
