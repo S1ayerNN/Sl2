@@ -1,28 +1,25 @@
 """Subscription payment schemas.
 
 Request/response models for the subscription payment flow.
-Payment provider integration is stubbed -- replace StubPaymentProvider
-with a real provider (YooKassa, Stripe, etc.) when ready.
 """
 
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
 from pydantic import BaseModel
 
 
 class SubscribeRequest(BaseModel):
-    """Request to start a subscription."""
-    tier_id: str          # "plus" or "premium"
-    period: str = "month"  # "month" or "year"
+    """Запрос на оформление подписки."""
+    tier_id: str          # "plus" или "premium"
+    period: str = "month"  # "month" или "year"
 
 
 class SubscribeResponse(BaseModel):
-    """Response with payment URL or confirmation."""
-    status: str               # "pending_payment" or "activated" (stub mode)
-    payment_url: Optional[str] = None  # Redirect URL for real providers
-    payment_id: Optional[str] = None   # Internal payment tracking ID
+    """Ответ с URL оплаты или подтверждением."""
+    status: str               # "pending_payment" или "activated" (stub)
+    payment_url: Optional[str] = None
+    order_id: str             # Внутренний ID заказа
     tier_id: str
     period: str
     price_rub: int
@@ -30,18 +27,17 @@ class SubscribeResponse(BaseModel):
 
 
 class PaymentWebhookPayload(BaseModel):
-    """Incoming webhook from payment provider.
+    """Входящий вебхук от платежного провайдера.
 
-    In production, this would be provider-specific (YooKassa, Stripe, etc.).
-    The stub version uses a simplified format.
+    В продакшене формат зависит от провайдера (YooKassa, Stripe и т.д.).
+    Stub-версия использует упрощенный формат.
     """
-    payment_id: str
-    status: str          # "succeeded" or "failed"
-    provider: str = "stub"
+    payment_provider_id: str  # ID платежа у провайдера
+    status: str               # "succeeded" или "failed"
 
 
 class SubscriptionStatusResponse(BaseModel):
-    """Current subscription status."""
+    """Текущий статус подписки."""
     tier_id: str
     display_name: str
     is_active: bool
@@ -51,7 +47,7 @@ class SubscriptionStatusResponse(BaseModel):
 
 
 class CancelSubscriptionResponse(BaseModel):
-    """Response after cancellation."""
+    """Ответ после отмены подписки."""
     status: str
     message: str
     tier_id: str

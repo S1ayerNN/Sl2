@@ -97,6 +97,9 @@ class User(Base):
         String(64), nullable=True
     )
 
+    # Subscription cancellation tracking
+    subscription_auto_renew: Mapped[bool] = mapped_column(default=True)
+
     # Profile completeness tracking
     profile_completeness: Mapped[int] = mapped_column(default=0)  # 0-100%
 
@@ -118,8 +121,17 @@ class User(Base):
     )
 
     @property
+    def has_active_subscription(self) -> bool:
+        """Check if user has any active paid subscription (plus or premium)."""
+        if self.subscription_tier == "free":
+            return False
+        if self.subscription_expires is None:
+            return False
+        return self.subscription_expires > datetime.now(timezone.utc)
+
+    @property
     def is_premium(self) -> bool:
-        """Check if user has active premium subscription."""
+        """Check if user has active premium subscription specifically."""
         if self.subscription_tier != "premium":
             return False
         if self.subscription_expires is None:
