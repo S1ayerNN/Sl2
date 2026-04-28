@@ -45,27 +45,63 @@ async def update_my_profile(
 
     Only provided fields will be updated. Use this for progressive profile completion.
     """
+    import re
+
     if update_data.name is not None:
-        current_user.name = update_data.name
+        name = update_data.name.strip()
+        if len(name) < 2 or len(name) > 100:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Name must be between 2 and 100 characters",
+            )
+        current_user.name = name
 
     if update_data.birth_time is not None:
         try:
+            if not re.match(r'^\d{1,2}:\d{2}$', update_data.birth_time):
+                raise ValueError()
             hours, minutes = update_data.birth_time.split(":")
-            current_user.birth_time = time(int(hours), int(minutes))
+            h, m = int(hours), int(minutes)
+            if not (0 <= h <= 23 and 0 <= m <= 59):
+                raise ValueError()
+            current_user.birth_time = time(h, m)
         except (ValueError, AttributeError):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid time format. Use HH:MM",
+                detail="Invalid time format. Use HH:MM (00:00-23:59)",
             )
 
     if update_data.birth_place is not None:
-        current_user.birth_place = update_data.birth_place
+        place = update_data.birth_place.strip()
+        if len(place) > 200:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Birth place must be under 200 characters",
+            )
+        current_user.birth_place = place
 
     if update_data.email is not None:
-        current_user.email = update_data.email
+        email = update_data.email.strip().lower()
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid email format",
+            )
+        if len(email) > 255:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email must be under 255 characters",
+            )
+        current_user.email = email
 
     if update_data.interests is not None:
-        current_user.interests = update_data.interests
+        # Only allow known interest keys with boolean values
+        allowed_keys = {"love", "career", "health", "finance"}
+        sanitized = {}
+        for k, v in update_data.interests.items():
+            if k in allowed_keys and isinstance(v, bool):
+                sanitized[k] = v
+        current_user.interests = sanitized
 
     # Recalculate profile completeness
     current_user.profile_completeness = current_user.calculate_completeness()

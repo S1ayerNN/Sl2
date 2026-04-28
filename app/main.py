@@ -12,6 +12,17 @@ from app.core.redis import redis_client
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup and shutdown events."""
+    # SECURITY: Validate critical configuration at startup
+    if settings.JWT_SECRET_KEY in ("change-me-to-a-random-secret-key", "CHANGE_ME_MUST_BE_RANDOM", ""):
+        raise RuntimeError(
+            "CRITICAL: JWT_SECRET_KEY must be set to a strong random value in .env. "
+            "Generate one with: openssl rand -hex 32"
+        )
+    if len(settings.JWT_SECRET_KEY) < 32:
+        raise RuntimeError(
+            "CRITICAL: JWT_SECRET_KEY is too short. Use at least 32 characters."
+        )
+
     # Startup: verify connections
     # Redis ping
     await redis_client.ping()

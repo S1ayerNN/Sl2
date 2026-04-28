@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.models.horoscope import Horoscope
 from app.models.user import User
 from app.services.zodiac_service import get_zodiac_info
+from app.core.security import sanitize_for_prompt
 
 client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
@@ -26,25 +27,31 @@ SYSTEM_PROMPT = """Ты - опытный астролог с глубоким з
 
 
 def _build_user_context(user: User) -> str:
-    """Build user context string for the prompt."""
+    """Build user context string for the prompt.
+
+    All user-provided fields are sanitized to prevent prompt injection.
+    """
     zodiac_info = get_zodiac_info(user.zodiac_sign)
 
+    # zodiac_sign, element, quality are system-calculated, safe
     context_parts = [
         f"Знак зодиака: {user.zodiac_sign}",
         f"Стихия: {zodiac_info['element']}",
         f"Качество: {zodiac_info['quality']}",
-        f"Пол: {user.gender}",
-        f"Имя: {user.name}",
+        f"Пол: {sanitize_for_prompt(user.gender, max_length=20)}",
+        f"Имя: {sanitize_for_prompt(user.name, max_length=100)}",
     ]
 
     if user.birth_time:
         context_parts.append(f"Время рождения: {user.birth_time.strftime('%H:%M')}")
 
     if user.birth_place:
-        context_parts.append(f"Место рождения: {user.birth_place}")
+        context_parts.append(f"Место рождения: {sanitize_for_prompt(user.birth_place, max_length=200)}")
 
     if user.interests:
-        active_interests = [k for k, v in user.interests.items() if v]
+        # Only allow known interest keys
+        allowed_interests = {"love", "career", "health", "finance"}
+        active_interests = [k for k, v in user.interests.items() if v and k in allowed_interests]
         if active_interests:
             context_parts.append(f"Интересующие сферы: {', '.join(active_interests)}")
 
@@ -116,12 +123,18 @@ async def generate_horoscope(
         return horoscope_text, user_prompt, model
 
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("AI generation failed: %s", str(e), exc_info=True)
+
         # Fallback: return a generic message if AI fails
+        # SECURITY: Never store raw exception details in DB
+        safe_name = sanitize_for_prompt(user.name, max_length=50)
         fallback_text = (
-            f"Дорогой(ая) {user.name}, сегодня звезды советуют тебе "
+            f"Дорогой(ая) {safe_name}, сегодня звезды советуют тебе "
             f"быть внимательнее к знакам вселенной. "
             f"Как {user.zodiac_sign}, ты обладаешь особой интуицией - "
             f"доверься ей сегодня. День благоприятен для новых начинаний "
             f"и важных решений. Не бойся перемен."
         )
-        return fallback_text, f"FALLBACK (error: {str(e)})", "fallback"
+        return fallback_text, "FALLBACK (ai_generation_error)", "fallback"

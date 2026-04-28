@@ -14,9 +14,9 @@ class Settings(BaseSettings):
     DATABASE_URL_SYNC: str = "postgresql://myastro:myastro_secret@db:5432/myastro"
 
     # Redis
-    REDIS_URL: str = "redis://redis:6379/0"
+    REDIS_URL: str = "redis://:myastro_redis_secret@redis:6379/0"
 
-    # JWT
+    # JWT - MUST be overridden in .env, app will refuse to start with default
     JWT_SECRET_KEY: str = "change-me-to-a-random-secret-key"
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
