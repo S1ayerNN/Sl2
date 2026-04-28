@@ -17,12 +17,16 @@ from app.core.crypto import decrypt_pii, encrypt_pii, hash_identifier
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import (
-    User, FamilyMember, InterestCategory, Gender, FamilyRelation,
+    User, FamilyMember, Gender, FamilyRelation,
 )
 from app.schemas.user import (
-    AVAILABLE_GENDERS, AVAILABLE_INTERESTS, AVAILABLE_RELATIONS,
+    AVAILABLE_GENDERS, AVAILABLE_RELATIONS,
     AvailableOptionsResponse, FamilyMemberCreate, FamilyMemberResponse,
     ProfileCompletenessHint, UserProfile, UserProfileUpdate,
+)
+from app.services.interest_catalog import (
+    get_catalog_for_api,
+    validate_interest_ids,
 )
 from app.services.zodiac_service import get_zodiac_sign
 
@@ -62,7 +66,7 @@ async def get_available_options():
     Frontend MUST use these values - no free text input for these fields.
     """
     return AvailableOptionsResponse(
-        interests=AVAILABLE_INTERESTS,
+        interests=get_catalog_for_api(),
         genders=AVAILABLE_GENDERS,
         relations=AVAILABLE_RELATIONS,
     )
@@ -130,10 +134,8 @@ async def update_my_profile(
         current_user.email_hash = hash_identifier(email)
 
     if update_data.interests is not None:
-        # Validate: ONLY predefined interest categories allowed
-        valid_values = {ic.value for ic in InterestCategory}
-        sanitized = [i for i in update_data.interests if i in valid_values]
-        current_user.interests = sanitized
+        # Validate: ONLY active catalog interests allowed
+        current_user.interests = validate_interest_ids(update_data.interests)
 
     current_user.profile_completeness = current_user.calculate_completeness()
     await db.flush()
@@ -254,8 +256,7 @@ async def add_family_member(
 
     interests = []
     if data.interests:
-        valid_values = {ic.value for ic in InterestCategory}
-        interests = [i for i in data.interests if i in valid_values]
+        interests = validate_interest_ids(data.interests)
 
     member = FamilyMember(
         owner_id=current_user.id,

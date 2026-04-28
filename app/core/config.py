@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import Dict, List
 
 
 class Settings(BaseSettings):
@@ -22,8 +22,20 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
-    # OpenAI
-    OPENAI_API_KEY: str = ""
+    # --- AI Provider (OpenRouter / OpenAI compatible) ---
+    # OpenRouter: base_url="https://openrouter.ai/api/v1", key=your-openrouter-key
+    # Direct OpenAI: base_url="https://api.openai.com/v1", key=your-openai-key
+    # Local Ollama: base_url="http://localhost:11434/v1", key="ollama"
+    AI_BASE_URL: str = "https://openrouter.ai/api/v1"
+    AI_API_KEY: str = ""
+
+    # Models - configurable per tier, change anytime without code changes
+    AI_MODEL_FREE: str = "openai/gpt-4o-mini"  # Model for free users
+    AI_MODEL_PREMIUM: str = "openai/gpt-4o"     # Model for premium users
+
+    # AI generation params
+    AI_MAX_TOKENS: int = 500
+    AI_TEMPERATURE: float = 0.8
 
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""

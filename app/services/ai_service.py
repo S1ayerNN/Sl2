@@ -1,7 +1,8 @@
 """AI horoscope generation service.
 
-All user data is decrypted server-side before building prompts.
-Users have NO access to prompt input - everything is constructed from their profile.
+Uses OpenRouter-compatible API (works with OpenAI, Anthropic, Google, open-source models).
+Models are configurable per tier via env vars - change without code deployment.
+All prompts are built server-side from user profile data.
 Content safety is checked on every generated response.
 """
 
@@ -14,8 +15,9 @@ from app.core.config import settings
 from app.core.crypto import decrypt_pii
 from app.core.security import sanitize_for_prompt
 from app.models.horoscope import Horoscope
-from app.models.user import User, FamilyMember, InterestCategory
+from app.models.user import User, FamilyMember
 from app.services.zodiac_service import get_zodiac_info
+from app.services.interest_catalog import get_prompt_hints_for_interests
 from app.services.content_safety import (
     check_content_safety,
     SAFETY_SYSTEM_INSTRUCTIONS,
@@ -23,7 +25,21 @@ from app.services.content_safety import (
 
 logger = logging.getLogger(__name__)
 
-client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+# OpenRouter/OpenAI-compatible client
+# Switching providers = changing AI_BASE_URL + AI_API_KEY in .env
+client = AsyncOpenAI(
+    api_key=settings.AI_API_KEY,
+    base_url=settings.AI_BASE_URL,
+)
+
+# --- PROMPT STRUCTURE ---
+# The prompt is composed of 3 parts:
+#
+# 1. SYSTEM_PROMPT - Role, rules, safety constraints (constant)
+# 2. USER_CONTEXT  - Profile data: zodiac, name, gender, interests (from DB)
+# 3. HISTORY_CONTEXT - Last 5 horoscopes with like/dislike feedback (from DB)
+#
+# User has ZERO input into any of these. Everything is server-controlled.
 
 SYSTEM_PROMPT = """Ты - опытный астролог с глубоким знанием астрологии. 
 Ты создаешь персонализированные, вдохновляющие гороскопы на русском языке.
@@ -39,18 +55,6 @@ SYSTEM_PROMPT = """Ты - опытный астролог с глубоким з
 - Если предыдущие понравились, сохраняй стиль, но не повторяй содержание
 """ + SAFETY_SYSTEM_INSTRUCTIONS
 
-# Mapping of interest enum values to Russian display names
-INTEREST_DISPLAY_NAMES = {
-    InterestCategory.LOVE: "любовь и отношения",
-    InterestCategory.CAREER: "карьера и работа",
-    InterestCategory.HEALTH: "здоровье",
-    InterestCategory.FINANCE: "финансы",
-    InterestCategory.FAMILY: "семья",
-    InterestCategory.EDUCATION: "образование и развитие",
-    InterestCategory.TRAVEL: "путешествия",
-    InterestCategory.CREATIVITY: "творчество",
-}
-
 
 def _build_profile_context(
     zodiac_sign: str,
@@ -60,9 +64,9 @@ def _build_profile_context(
     birth_place: str = None,
     interests: list[str] = None,
 ) -> str:
-    """Build profile context string for the prompt.
+    """Build user profile context for the prompt.
 
-    Accepts already-decrypted values. All text is sanitized.
+    All text fields are sanitized. Interests use prompt_hint from catalog.
     """
     zodiac_info = get_zodiac_info(zodiac_sign)
 
@@ -83,17 +87,12 @@ def _build_profile_context(
         )
 
     if interests:
-        # Only use predefined interest names - no user-supplied text
-        valid_interests = []
-        for interest in interests:
-            try:
-                cat = InterestCategory(interest)
-                display = INTEREST_DISPLAY_NAMES.get(cat, interest)
-                valid_interests.append(display)
-            except ValueError:
-                continue  # Skip unknown interests
-        if valid_interests:
-            context_parts.append(f"Интересующие сферы: {', '.join(valid_interests)}")
+        # Use catalog prompt_hints instead of raw IDs
+        hints = get_prompt_hints_for_interests(interests)
+        if hints:
+            context_parts.append(
+                f"Интересующие сферы жизни: {'; '.join(hints)}"
+            )
 
     return "\n".join(context_parts)
 
@@ -107,8 +106,8 @@ def _build_history_context(history: list[Horoscope]) -> str:
 
     for h in history:
         feedback_text = {
-            "like": "ПОНРАВИЛОСЬ",
-            "dislike": "НЕ ПОНРАВИЛОСЬ",
+            "like": "ПОНРАВИЛОСЬ пользователю",
+            "dislike": "НЕ ПОНРАВИЛОСЬ пользователю",
             None: "нет обратной связи",
         }.get(h.feedback, "нет обратной связи")
 
@@ -120,21 +119,51 @@ def _build_history_context(history: list[Horoscope]) -> str:
     return "\n".join(history_parts)
 
 
+def build_full_prompt(
+    zodiac_sign: str,
+    gender: str,
+    name: str,
+    target_date: date,
+    birth_time=None,
+    birth_place: str = None,
+    interests: list[str] = None,
+    history: list[Horoscope] = None,
+) -> tuple[str, str]:
+    """Build the complete prompt pair (system + user).
+
+    Exposed as a public function for prompt testing/debugging.
+    Returns (system_prompt, user_prompt).
+    """
+    profile_context = _build_profile_context(
+        zodiac_sign=zodiac_sign,
+        gender=gender,
+        name=name,
+        birth_time=birth_time,
+        birth_place=birth_place,
+        interests=interests,
+    )
+    history_context = _build_history_context(history or [])
+
+    user_prompt = f"""Составь персональный гороскоп на {target_date.strftime('%d.%m.%Y')} для этого человека:
+
+{profile_context}
+
+{history_context}
+
+Учти обратную связь по предыдущим гороскопам. Если что-то не понравилось - измени стиль и подход.
+Если понравилось - сохрани тон, но предложи свежее содержание.
+"""
+
+    return SYSTEM_PROMPT, user_prompt
+
+
 async def generate_horoscope_for_user(
     user: User,
     target_date: date,
     history: list[Horoscope],
     is_premium: bool = False,
 ) -> tuple[str, str, str, bool]:
-    """Generate a personalized horoscope for the user.
-
-    Decrypts PII server-side, builds prompt, generates, checks safety.
-    User has NO input into the prompt.
-
-    Returns:
-        Tuple of (horoscope_text, prompt_used, model_used, safety_passed)
-    """
-    # Decrypt PII for prompt building
+    """Generate a personalized horoscope for the user."""
     name = decrypt_pii(user.name_encrypted)
     birth_place = decrypt_pii(user.birth_place_encrypted) if user.birth_place_encrypted else None
 
@@ -184,38 +213,33 @@ async def _generate(
     history: list[Horoscope],
     is_premium: bool,
 ) -> tuple[str, str, str, bool]:
-    """Internal generation logic. Returns (text, prompt, model, safety_passed)."""
-    model = "gpt-4o" if is_premium else "gpt-4o-mini"
+    """Internal generation logic.
 
-    profile_context = _build_profile_context(
+    Returns (horoscope_text, prompt_used, model_used, safety_passed).
+    """
+    # Select model from config based on subscription tier
+    model = settings.AI_MODEL_PREMIUM if is_premium else settings.AI_MODEL_FREE
+
+    system_prompt, user_prompt = build_full_prompt(
         zodiac_sign=zodiac_sign,
         gender=gender,
         name=name,
+        target_date=target_date,
         birth_time=birth_time,
         birth_place=birth_place,
         interests=interests,
+        history=history,
     )
-    history_context = _build_history_context(history)
-
-    user_prompt = f"""Составь персональный гороскоп на {target_date.strftime('%d.%m.%Y')} для этого человека:
-
-{profile_context}
-
-{history_context}
-
-Учти обратную связь по предыдущим гороскопам. Если что-то не понравилось - измени стиль и подход.
-Если понравилось - сохрани тон, но предложи свежее содержание.
-"""
 
     try:
         response = await client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            max_tokens=500,
-            temperature=0.8,
+            max_tokens=settings.AI_MAX_TOKENS,
+            temperature=settings.AI_TEMPERATURE,
         )
 
         horoscope_text = response.choices[0].message.content.strip()
@@ -224,14 +248,14 @@ async def _generate(
         is_safe, violation = check_content_safety(horoscope_text)
         if not is_safe:
             logger.warning(
-                "Generated horoscope FAILED safety check: %s. Regenerating.",
-                violation,
+                "Generated horoscope FAILED safety check: %s (model=%s). Regenerating.",
+                violation, model,
             )
             # Retry once with explicit safety reminder
             response = await client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                     {"role": "assistant", "content": horoscope_text},
                     {
@@ -242,22 +266,20 @@ async def _generate(
                         ),
                     },
                 ],
-                max_tokens=500,
+                max_tokens=settings.AI_MAX_TOKENS,
                 temperature=0.7,
             )
             horoscope_text = response.choices[0].message.content.strip()
 
-            # Check again
             is_safe, violation = check_content_safety(horoscope_text)
             if not is_safe:
-                # Use safe fallback
                 horoscope_text = _safe_fallback(name, zodiac_sign)
                 return horoscope_text, "SAFETY_FALLBACK", model, False
 
         return horoscope_text, user_prompt, model, True
 
     except Exception as e:
-        logger.error("AI generation failed: %s", str(e), exc_info=True)
+        logger.error("AI generation failed (model=%s): %s", model, str(e), exc_info=True)
         fallback_text = _safe_fallback(name, zodiac_sign)
         return fallback_text, "FALLBACK (ai_generation_error)", "fallback", True
 
