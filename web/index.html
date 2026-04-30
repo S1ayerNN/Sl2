@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MyAstro</title>
 <style>
-:root{--bg:#0f0f23;--card:#1a1a2e;--elev:#232342;--gold:#e2b714;--purple:#7b2ff7;--blue:#4361ee;--txt:#f5f5f5;--txt2:#8b8b9e;--ok:#06d6a0;--err:#ef476f}
+:root{--bg:#0f0f23;--card:#1a1a2e;--elev:#232342;--gold:#e2b714;--purple:#7b2ff7;--neon:#a78bfa;--blue:#4361ee;--txt:#f5f5f5;--txt2:#8b8b9e;--ok:#06d6a0;--err:#ef476f}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;max-width:520px;margin:0 auto}
 .screen{display:none;padding:16px;padding-top:60px;min-height:100vh}
 .screen.active{display:block}
 /* Top bar */
 .topbar{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;height:52px;background:var(--card);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100;border-bottom:1px solid var(--elev)}
-.topbar-title{font-size:1.1rem;font-weight:300;letter-spacing:3px;color:var(--gold)}
+.topbar-title{font-size:1.1rem;font-weight:300;letter-spacing:3px;color:var(--neon)}
 .topbar-icons{display:flex;gap:12px}
 .topbar-icon{font-size:1.4rem;cursor:pointer;opacity:0.7}
 .topbar-icon:hover{opacity:1}
@@ -23,15 +23,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .drawer.open{right:0}
 .drawer-close{position:absolute;top:16px;right:16px;font-size:1.5rem;cursor:pointer;color:var(--txt2)}
 .drawer-item{padding:12px 0;border-bottom:1px solid var(--elev);cursor:pointer;display:flex;align-items:center;gap:10px}
-.drawer-item:hover{color:var(--gold)}
-.drawer-item.active{color:var(--gold)}
+.drawer-item:hover{color:var(--neon)}
+.drawer-item.active{color:var(--neon)}
 .drawer-section{color:var(--txt2);font-size:0.8rem;text-transform:uppercase;margin-top:16px;margin-bottom:4px;letter-spacing:1px}
 /* Common */
 h1{font-size:1.4rem;font-weight:300;margin-bottom:8px}
 h2{font-size:1.1rem;font-weight:400;color:var(--txt2);margin-bottom:12px}
 .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px}
 .btn{display:block;width:100%;padding:13px;border:none;border-radius:12px;font-size:1rem;cursor:pointer;margin-bottom:8px;font-weight:500}
-.btn-gold{background:linear-gradient(135deg,var(--gold),#d4a00a);color:#000}
+.btn-gold{background:linear-gradient(135deg,#7b2ff7,#a78bfa);color:#fff}
+.btn-gold:hover{background:linear-gradient(135deg,#6d28d9,#8b5cf6)}
 .btn-sec{background:var(--elev);color:var(--txt);border:1px solid var(--purple)}
 .btn-ok{background:var(--ok);color:#000}
 .btn-err{background:var(--err);color:#fff}
@@ -39,19 +40,23 @@ h2{font-size:1.1rem;font-weight:400;color:var(--txt2);margin-bottom:12px}
 .btn:disabled{opacity:0.5;cursor:not-allowed}
 input,select{width:100%;padding:11px;border:1px solid var(--elev);border-radius:12px;background:var(--elev);color:var(--txt);font-size:1rem;margin-bottom:10px}
 input:focus,select:focus{outline:none;border-color:var(--purple)}
-.zodiac-big{font-size:3rem;text-align:center;margin:16px 0}
-.txt2{color:var(--txt2)}.gold{color:var(--gold)}.center{text-align:center}
+.txt2{color:var(--txt2)}.gold{color:var(--neon)}.center{text-align:center}
 .mb8{margin-bottom:8px}.mb16{margin-bottom:16px}.mt16{margin-top:16px}
 .flex{display:flex;gap:8px}.flex1{flex:1}
 .tag{display:inline-block;padding:6px 12px;border-radius:20px;background:var(--elev);font-size:0.85rem;margin:3px;cursor:pointer;border:1px solid transparent}
-.tag.sel{border-color:var(--gold);background:rgba(226,183,20,0.15)}
+.tag.sel{border-color:var(--neon);background:rgba(167,139,250,0.15)}
 .horo-text{line-height:1.7;font-size:1.02rem;white-space:pre-wrap}
 .pbar{height:6px;background:var(--elev);border-radius:3px;overflow:hidden;margin:6px 0}
-.pfill{height:100%;background:linear-gradient(90deg,var(--purple),var(--gold));border-radius:3px;transition:width .3s}
-.spinner{display:inline-block;width:36px;height:36px;border:3px solid var(--elev);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite}
+.pfill{height:100%;background:linear-gradient(90deg,var(--purple),var(--neon));border-radius:3px;transition:width .3s}
+.spinner{display:inline-block;width:36px;height:36px;border:3px solid var(--elev);border-top-color:var(--neon);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.75rem;background:var(--purple)}
-/* Notification toasts - top right */
+/* Tier badges */
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:0.75rem;font-weight:600;letter-spacing:0.5px}
+.badge-free{background:var(--elev);color:var(--txt2);border:1px solid #3a3a5c}
+.badge-plus{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#93c5fd;border:1px solid #3b82f6;box-shadow:0 0 8px rgba(59,130,246,0.3)}
+.badge-premium{background:linear-gradient(135deg,#4a1d6a,#7c3aed);color:#ddd6fe;border:1px solid #8b5cf6;box-shadow:0 0 12px rgba(139,92,246,0.4);animation:badgePulse 2s ease infinite}
+@keyframes badgePulse{0%,100%{box-shadow:0 0 8px rgba(139,92,246,0.3)}50%{box-shadow:0 0 16px rgba(139,92,246,0.6)}}
+/* Notifications */
 .notif-container{position:fixed;top:60px;right:16px;z-index:400;display:flex;flex-direction:column;gap:8px;max-width:340px}
 .notif{padding:12px 16px;border-radius:12px;font-size:0.88rem;animation:notifIn 0.3s ease;box-shadow:0 4px 16px rgba(0,0,0,0.3);cursor:pointer;line-height:1.4}
 .notif-info{background:var(--elev);border:1px solid var(--purple);color:var(--txt)}
@@ -60,13 +65,28 @@ input:focus,select:focus{outline:none;border-color:var(--purple)}
 @keyframes notifIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
 .toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--elev);padding:10px 20px;border-radius:12px;border:1px solid var(--purple);z-index:300;display:none;font-size:0.9rem}
 label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
-/* Back button */
 .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--txt2);font-size:0.9rem;cursor:pointer;margin-bottom:12px;padding:4px 0}
-.back-btn:hover{color:var(--gold)}
-/* Starry sky animation */
+.back-btn:hover{color:var(--neon)}
+/* Starry sky */
 .starry-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;overflow:hidden}
 .starry-bg canvas{width:100%;height:100%}
 .auth-content{position:relative;z-index:1}
+/* Landing title */
+.landing-title{font-size:2.6rem;font-weight:200;letter-spacing:10px;background:linear-gradient(90deg,#a78bfa,#c4b5fd,#ddd6fe,#a78bfa);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 4s ease infinite}
+@keyframes shimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+/* Profile card in horoscope */
+.profile-card{display:flex;gap:16px;align-items:center;text-align:left}
+.profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--elev);display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;border:2px solid var(--purple);overflow:hidden}
+.profile-avatar img{width:100%;height:100%;object-fit:cover}
+.profile-info{flex:1;min-width:0}
+.profile-name{font-size:1.15rem;color:var(--neon);font-weight:500;margin-bottom:2px}
+.profile-birth{font-size:0.85rem;color:var(--txt2);margin-bottom:4px}
+.profile-zodiac{display:flex;align-items:center;gap:8px;font-size:0.95rem}
+/* Animated zodiac SVG */
+.zodiac-anim{width:28px;height:28px;display:inline-block}
+.zodiac-anim svg{width:100%;height:100%}
+.zodiac-anim svg path,.zodiac-anim svg circle,.zodiac-anim svg line,.zodiac-anim svg polyline{stroke:#c0c0d0;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(192,192,208,0.5));animation:zodiacGlow 3s ease infinite}
+@keyframes zodiacGlow{0%,100%{stroke:#c0c0d0;filter:drop-shadow(0 0 3px rgba(192,192,208,0.4))}50%{stroke:#e8e8f0;filter:drop-shadow(0 0 6px rgba(192,192,208,0.8))}}
 </style>
 </head>
 <body>
@@ -80,31 +100,26 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   </div>
 </div>
 
-<!-- Drawer (Right side menu) -->
+<!-- Drawer -->
 <div class="drawer-overlay" id="drawer-overlay" onclick="toggleDrawer()"></div>
 <div class="drawer" id="drawer">
   <span class="drawer-close" onclick="toggleDrawer()">&times;</span>
-  
   <div class="drawer-section">Разделы</div>
   <div class="drawer-item active" data-section="horoscope" onclick="showSection('horoscope')">&#128302; Гороскоп</div>
   <div class="drawer-item" data-section="history" onclick="showSection('history')">&#128220; Предыдущие гороскопы</div>
   <div class="drawer-item" data-section="family" onclick="showSection('family')">&#128106; Семья</div>
-  
   <div class="drawer-section">Будущие разделы</div>
   <div class="drawer-item txt2">&#127183; Таро (скоро)</div>
   <div class="drawer-item txt2">&#128722; Магазин (скоро)</div>
-  
   <div class="drawer-section">Настройки</div>
   <div class="drawer-item" data-section="profile" onclick="showSection('profile')">&#128100; Профиль и данные</div>
   <div class="drawer-item" data-section="subscription" onclick="showSection('subscription')">&#11088; Подписка</div>
   <div class="drawer-item" data-section="settings" onclick="showSection('settings')">&#9881; Настройки</div>
-  
   <div style="margin-top:30px;">
     <button class="btn btn-sec" onclick="logout()" style="font-size:0.9rem;">Выйти</button>
   </div>
 </div>
 
-<!-- Notifications container (top-right) -->
 <div class="notif-container" id="notif-container"></div>
 <div id="toast" class="toast"></div>
 
@@ -112,8 +127,8 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <div id="screen-auth" class="screen active" style="padding-top:0;">
   <div class="starry-bg"><canvas id="starCanvas"></canvas></div>
   <div class="auth-content center" style="padding-top:100px;">
-    <div style="font-size:2rem;font-weight:200;letter-spacing:8px;color:var(--gold);">MYASTRO</div>
-    <div class="txt2 mb16">Персональный AI-астролог</div>
+    <div class="landing-title">MYASTRO</div>
+    <div class="txt2 mb16" style="font-size:0.95rem;margin-top:8px;">Твой персональный астролог каждый день рядом</div>
     <div style="margin-top:50px;">
       <button class="btn btn-gold" onclick="devLogin()">Войти (тестовый режим)</button>
       <p class="txt2 mt16" style="font-size:0.82rem;">В продакшене: Telegram / Google</p>
@@ -123,14 +138,12 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 
 <!-- REGISTRATION -->
 <div id="screen-reg" class="screen" style="padding-top:80px;">
-  <!-- Step 1: Name -->
   <div id="reg-step1">
     <div class="txt2 mb8">Шаг 1 из 3</div>
     <h1>Как тебя зовут?</h1>
     <input type="text" id="reg-name" placeholder="Имя" class="mt16">
     <button class="btn btn-gold mt16" onclick="regStep2()">Далее</button>
   </div>
-  <!-- Step 2: Birth date -->
   <div id="reg-step2" style="display:none;">
     <div class="txt2 mb8">Шаг 2 из 3</div>
     <h1>Когда ты родился(ась)?</h1>
@@ -138,7 +151,6 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
     <div id="reg-zodiac" class="gold center mt16" style="font-size:1.2rem;"></div>
     <button class="btn btn-gold mt16" onclick="regStep3()">Далее</button>
   </div>
-  <!-- Step 3: Gender + optional details -->
   <div id="reg-step3" style="display:none;">
     <div class="txt2 mb8">Шаг 3 из 3</div>
     <h1>Укажи пол</h1>
@@ -148,14 +160,13 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
     </div>
     <label class="mt16" style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#888;cursor:pointer;">
       <input type="checkbox" id="reg-privacy" onchange="checkRegReady()" style="margin-top:3px;">
-      <span>Я соглашаюсь с <a href="/privacy.html" target="_blank" style="color:#6c5ce7;">политикой обработки персональных данных</a></span>
+      <span>Я соглашаюсь с <a href="/privacy.html" target="_blank" style="color:#a78bfa;">политикой обработки персональных данных</a></span>
     </label>
     <div class="mt16">
       <button class="btn btn-gold" id="btn-reg-finish" onclick="finishReg()" disabled>&#10024; Начать!</button>
       <button class="btn btn-sec" onclick="showRegExtra()">&#9998; Дополнить данные</button>
     </div>
   </div>
-  <!-- Optional extra data (inline) -->
   <div id="reg-extra" style="display:none;" class="card mt16">
     <h2>Дополнительные данные</h2>
     <p class="txt2 mb8" style="font-size:0.85rem;">Заполни сейчас или позже в профиле</p>
@@ -176,14 +187,21 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   </div>
 </div>
 
-<!-- HOROSCOPE (default section) -->
+<!-- HOROSCOPE -->
 <div id="screen-horoscope" class="screen">
-  <div class="card center">
-    <div id="z-icon" class="zodiac-big"></div>
-    <div id="user-greeting" class="gold" style="font-size:1.15rem;margin-bottom:4px;"></div>
-    <div id="z-name" class="txt2" style="font-size:1rem;"></div>
-    <div class="txt2" id="z-date"></div>
-    <span id="z-badge" class="badge mt16"></span>
+  <div class="card">
+    <div class="profile-card">
+      <div class="profile-avatar" id="user-avatar">&#128100;</div>
+      <div class="profile-info">
+        <div class="profile-name" id="user-greeting"></div>
+        <div class="profile-birth" id="z-date"></div>
+        <div class="profile-zodiac">
+          <span class="zodiac-anim" id="z-anim"></span>
+          <span id="z-name"></span>
+        </div>
+        <span id="z-badge" class="badge badge-free mt16" style="margin-top:6px;"></span>
+      </div>
+    </div>
   </div>
 
   <div id="horo-area">
@@ -210,11 +228,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   </div>
 
   <div id="hint-card" class="card mt16" style="display:none;">
-    <div id="hint-content">
-      <div class="txt2 mb8">Заполни профиль для точных прогнозов</div>
-      <div class="pbar"><div class="pfill" id="comp-bar" style="width:0%"></div></div>
-      <div class="txt2" style="font-size:0.82rem;" id="comp-txt">0%</div>
-    </div>
+    <div id="hint-content"></div>
     <button class="btn btn-sec btn-sm mt16" onclick="showSection('profile')" id="hint-edit-btn" style="width:auto;margin:8px auto 0;display:inline-block;">&#9998; Редактировать профиль</button>
   </div>
 </div>
@@ -303,31 +317,45 @@ const API='/api/v1';
 let token=localStorage.getItem('at');
 let curHoroId=null, profile=null, catalog=[], regGender='', famGenderVal='';
 
-// ===== Starry Sky Animation =====
+// ===== Animated Zodiac SVGs (silver silhouettes) =====
+const zodiacSVG={
+  'Овен':'<svg viewBox="0 0 32 32"><path d="M8 28c0-12 4-18 8-22 4 4 8 10 8 22"/><path d="M8 12c0-6 3-8 8-8s8 2 8 8"/></svg>',
+  'Телец':'<svg viewBox="0 0 32 32"><circle cx="16" cy="20" r="8"/><path d="M8 12c0-6 3-8 8-8s8 2 8 8"/><path d="M8 8c-3-4-6-2-6 1"/><path d="M24 8c3-4 6-2 6 1"/></svg>',
+  'Близнецы':'<svg viewBox="0 0 32 32"><line x1="8" y1="4" x2="8" y2="28"/><line x1="24" y1="4" x2="24" y2="28"/><path d="M8 4c4 4 12 4 16 0"/><path d="M8 28c4-4 12-4 16 0"/><line x1="8" y1="16" x2="24" y2="16"/></svg>',
+  'Рак':'<svg viewBox="0 0 32 32"><circle cx="10" cy="18" r="5"/><circle cx="22" cy="14" r="5"/><path d="M5 10c8-12 20-4 22 4"/><path d="M27 22c-8 12-20 4-22-4"/></svg>',
+  'Лев':'<svg viewBox="0 0 32 32"><circle cx="12" cy="14" r="6"/><path d="M18 14c2-8 10-6 10 0s-4 10-12 14"/><path d="M16 28c2-2 4-1 4 1"/></svg>',
+  'Дева':'<svg viewBox="0 0 32 32"><path d="M6 4v20c0 4 4 4 4 0V4"/><path d="M10 4v20c0 4 4 4 4 0V4"/><path d="M14 4v20c0 4 4 4 4 0"/><path d="M18 16c4 2 8 4 8 10"/><line x1="22" y1="24" x2="26" y2="20"/></svg>',
+  'Весы':'<svg viewBox="0 0 32 32"><line x1="4" y1="24" x2="28" y2="24"/><line x1="16" y1="24" x2="16" y2="12"/><path d="M6 12h20"/><path d="M6 12c-2-6 4-8 10-8s12 2 10 8"/></svg>',
+  'Скорпион':'<svg viewBox="0 0 32 32"><path d="M4 4v20c0 4 4 4 4 0V4"/><path d="M8 4v20c0 4 4 4 4 0V4"/><path d="M12 4v20c0 4 4 4 4 0"/><path d="M16 20h8l4 4"/><path d="M28 24l-4-4 4 0"/></svg>',
+  'Стрелец':'<svg viewBox="0 0 32 32"><line x1="4" y1="28" x2="28" y2="4"/><polyline points="18,4 28,4 28,14"/><line x1="10" y1="16" x2="22" y2="22"/></svg>',
+  'Козерог':'<svg viewBox="0 0 32 32"><path d="M4 4v16c0 6 6 6 8 2V4"/><path d="M12 14c4 8 14 8 14 2 0-4-4-6-6-2"/></svg>',
+  'Водолей':'<svg viewBox="0 0 32 32"><path d="M2 12c4-4 6 0 10-4s6 0 10-4 6 0 8-4"/><path d="M2 22c4-4 6 0 10-4s6 0 10-4 6 0 8-4"/></svg>',
+  'Рыбы':'<svg viewBox="0 0 32 32"><path d="M4 16c6-10 12-10 12 0s-6 10-12 0"/><path d="M28 16c-6-10-12-10-12 0s6 10 12 0"/><line x1="2" y1="16" x2="30" y2="16"/></svg>'
+};
+
+// ===== Starry Sky with drift =====
 (function initStars(){
   const canvas=document.getElementById('starCanvas');
   if(!canvas)return;
   const ctx=canvas.getContext('2d');
-  let w,h,stars=[],constellation=[];
-  function resize(){
-    w=canvas.width=window.innerWidth;
-    h=canvas.height=window.innerHeight;
-  }
+  let w,h,stars=[];
+  function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight;}
   resize();
   window.addEventListener('resize',resize);
 
-  // Generate stars
-  for(let i=0;i<200;i++){
+  for(let i=0;i<250;i++){
     stars.push({
       x:Math.random()*2000,y:Math.random()*2000,
-      r:Math.random()*1.5+0.3,
+      r:Math.random()*1.8+0.2,
       a:Math.random()*0.8+0.2,
       speed:Math.random()*0.0003+0.0001,
-      phase:Math.random()*Math.PI*2
+      phase:Math.random()*Math.PI*2,
+      dx:Math.random()*0.15+0.02,
+      dy:Math.random()*0.08+0.01
     });
   }
 
-  // Constellation (Leo / lion shape)
+  // Constellation
   const cPoints=[
     {x:0.38,y:0.28},{x:0.42,y:0.22},{x:0.48,y:0.20},{x:0.52,y:0.23},
     {x:0.50,y:0.30},{x:0.46,y:0.34},{x:0.42,y:0.32},{x:0.38,y:0.28},
@@ -336,81 +364,63 @@ let curHoroId=null, profile=null, catalog=[], regGender='', famGenderVal='';
   ];
   const cLines=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[5,8],[8,9],[9,10],[10,11],[11,12],[12,13]];
 
+  let driftX=0, driftY=0;
+
   function draw(t){
     ctx.clearRect(0,0,w,h);
-
-    // Background gradient
     const grd=ctx.createRadialGradient(w*0.5,h*0.4,0,w*0.5,h*0.4,w*0.7);
-    grd.addColorStop(0,'#0a0a1e');
-    grd.addColorStop(0.5,'#0f0f23');
-    grd.addColorStop(1,'#070714');
-    ctx.fillStyle=grd;
-    ctx.fillRect(0,0,w,h);
+    grd.addColorStop(0,'#0a0a1e');grd.addColorStop(0.5,'#0f0f23');grd.addColorStop(1,'#070714');
+    ctx.fillStyle=grd;ctx.fillRect(0,0,w,h);
 
-    // Stars with twinkling
+    // Global drift (flying through space)
+    driftX+=0.12;driftY+=0.06;
+
     stars.forEach(s=>{
       const twinkle=Math.sin(t*s.speed*1000+s.phase)*0.3+0.7;
-      const sx=s.x%w, sy=s.y%h;
-      ctx.beginPath();
-      ctx.arc(sx,sy,s.r,0,Math.PI*2);
-      ctx.fillStyle='rgba(255,255,255,'+(s.a*twinkle)+')';
-      ctx.fill();
+      let sx=((s.x+driftX*s.dx*3)%w+w)%w;
+      let sy=((s.y+driftY*s.dy*3)%h+h)%h;
+      ctx.beginPath();ctx.arc(sx,sy,s.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,'+(s.a*twinkle)+')';ctx.fill();
     });
 
-    // Constellation
+    // Constellation (drifts slowly)
+    const cDriftX=(driftX*0.01)%0.1;
+    const cDriftY=(driftY*0.008)%0.08;
     const cAlpha=Math.sin(t*0.0005)*0.15+0.45;
-    // Lines
-    ctx.strokeStyle='rgba(226,183,20,'+cAlpha*0.4+')';
-    ctx.lineWidth=1;
+    ctx.strokeStyle='rgba(167,139,250,'+cAlpha*0.4+')';ctx.lineWidth=1;
     cLines.forEach(([a,b])=>{
       ctx.beginPath();
-      ctx.moveTo(cPoints[a].x*w,cPoints[a].y*h);
-      ctx.lineTo(cPoints[b].x*w,cPoints[b].y*h);
+      ctx.moveTo((cPoints[a].x+cDriftX)*w,(cPoints[a].y+cDriftY)*h);
+      ctx.lineTo((cPoints[b].x+cDriftX)*w,(cPoints[b].y+cDriftY)*h);
       ctx.stroke();
     });
-    // Points
     cPoints.forEach(p=>{
-      ctx.beginPath();
-      ctx.arc(p.x*w,p.y*h,2.5,0,Math.PI*2);
-      ctx.fillStyle='rgba(226,183,20,'+cAlpha+')';
-      ctx.fill();
-      // glow
-      ctx.beginPath();
-      ctx.arc(p.x*w,p.y*h,6,0,Math.PI*2);
-      ctx.fillStyle='rgba(226,183,20,'+cAlpha*0.15+')';
-      ctx.fill();
+      const px=(p.x+cDriftX)*w, py=(p.y+cDriftY)*h;
+      ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);
+      ctx.fillStyle='rgba(167,139,250,'+cAlpha+')';ctx.fill();
+      ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);
+      ctx.fillStyle='rgba(167,139,250,'+cAlpha*0.15+')';ctx.fill();
     });
 
-    // Occasional shooting star
-    if(Math.random()<0.002){
+    // Shooting stars
+    if(Math.random()<0.003){
       const sx2=Math.random()*w,sy2=Math.random()*h*0.5;
-      const angle=Math.PI*0.2+Math.random()*0.3;
-      const len=80+Math.random()*60;
+      const angle=Math.PI*0.2+Math.random()*0.3,len=80+Math.random()*60;
       const grad=ctx.createLinearGradient(sx2,sy2,sx2+Math.cos(angle)*len,sy2+Math.sin(angle)*len);
-      grad.addColorStop(0,'rgba(255,255,255,0.8)');
-      grad.addColorStop(1,'rgba(255,255,255,0)');
-      ctx.strokeStyle=grad;
-      ctx.lineWidth=1.5;
-      ctx.beginPath();
-      ctx.moveTo(sx2,sy2);
-      ctx.lineTo(sx2+Math.cos(angle)*len,sy2+Math.sin(angle)*len);
-      ctx.stroke();
+      grad.addColorStop(0,'rgba(167,139,250,0.8)');grad.addColorStop(1,'rgba(167,139,250,0)');
+      ctx.strokeStyle=grad;ctx.lineWidth=1.5;ctx.beginPath();
+      ctx.moveTo(sx2,sy2);ctx.lineTo(sx2+Math.cos(angle)*len,sy2+Math.sin(angle)*len);ctx.stroke();
     }
-
     requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);
 })();
 
-// ===== Notifications (top-right) =====
-function notify(msg, type='info', duration=4000){
-  const container=document.getElementById('notif-container');
-  const el=document.createElement('div');
-  el.className='notif notif-'+type;
-  el.textContent=msg;
-  el.onclick=()=>el.remove();
-  container.appendChild(el);
-  setTimeout(()=>{if(el.parentNode)el.remove();},duration);
+// ===== Notifications =====
+function notify(msg,type='info',duration=4000){
+  const c=document.getElementById('notif-container');
+  const el=document.createElement('div');el.className='notif notif-'+type;el.textContent=msg;el.onclick=()=>el.remove();
+  c.appendChild(el);setTimeout(()=>{if(el.parentNode)el.remove();},duration);
 }
 
 // Drawer
@@ -419,16 +429,12 @@ function toggleDrawer(){
   document.getElementById('drawer-overlay').classList.toggle('open');
 }
 
-// Sections (inside main app, not auth/reg)
 function showSection(name){
-  // Close drawer if open
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('drawer-overlay').classList.remove('open');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
-  document.querySelectorAll('.drawer-item[data-section]').forEach(d=>{
-    d.classList.toggle('active',d.dataset.section===name);
-  });
+  document.querySelectorAll('.drawer-item[data-section]').forEach(d=>d.classList.toggle('active',d.dataset.section===name));
   if(name==='history')loadHistory();
   if(name==='family')loadFamily();
   if(name==='profile')loadProfileScreen();
@@ -440,22 +446,14 @@ function showSection(name){
 async function devLogin(){
   try{
     const r=await fetch(API+'/auth/dev-login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-    if(!r.ok){
-      const d=await r.json().catch(()=>({}));
-      throw new Error(d.detail||'Login failed');
-    }
-    const d=await r.json();
-    token=d.access_token;
-    localStorage.setItem('at',token);
-    await loadProfile();
-    showSection('horoscope');
-    document.querySelector('.topbar').style.display='flex';
+    if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.detail||'Login failed');}
+    const d=await r.json();token=d.access_token;localStorage.setItem('at',token);
+    await loadProfile();showSection('horoscope');document.querySelector('.topbar').style.display='flex';
   }catch(e){notify(e.message,'error');}
 }
 
 function logout(){
-  localStorage.removeItem('at');
-  token=null;profile=null;
+  localStorage.removeItem('at');token=null;profile=null;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-auth').classList.add('active');
   document.querySelector('.topbar').style.display='none';
@@ -463,7 +461,6 @@ function logout(){
   document.getElementById('drawer-overlay').classList.remove('open');
 }
 
-// API
 async function api(p,m='GET',b=null){
   const o={method:m,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
   if(b)o.body=JSON.stringify(b);
@@ -480,7 +477,6 @@ function calcZodiac(m,d){
   const days=[20,19,21,20,21,21,23,23,23,23,22,22];
   return d>=days[m-1]?signs[m]:signs[m-1];
 }
-
 function regStep2(){
   const n=document.getElementById('reg-name').value.trim();
   if(n.length<2){notify('Введи имя (минимум 2 символа)','error');return;}
@@ -488,33 +484,27 @@ function regStep2(){
   document.getElementById('reg-step2').style.display='block';
   document.getElementById('reg-birth').addEventListener('change',function(){
     const d=new Date(this.value);
-    if(d){const z=calcZodiac(d.getMonth()+1,d.getDate());document.getElementById('reg-zodiac').textContent=z;}
+    if(d){document.getElementById('reg-zodiac').textContent=calcZodiac(d.getMonth()+1,d.getDate());}
   });
 }
-
 function regStep3(){
   if(!document.getElementById('reg-birth').value){notify('Укажи дату рождения','error');return;}
   document.getElementById('reg-step2').style.display='none';
   document.getElementById('reg-step3').style.display='block';
-  // Render interest tags for extra section
   const c=document.getElementById('reg-interests');
   c.innerHTML=catalog.map(i=>'<span class="tag" data-id="'+i.id+'" onclick="this.classList.toggle(\'sel\')">'+(i.icon||'')+' '+i.label_ru+'</span>').join('');
 }
-
 function selectGender(g){
   regGender=g;
   document.getElementById('reg-male').classList.toggle('tag',g!=='male');
   document.getElementById('reg-female').classList.toggle('tag',g!=='female');
-  document.getElementById('reg-male').style.borderColor=g==='male'?'var(--gold)':'';
-  document.getElementById('reg-female').style.borderColor=g==='female'?'var(--gold)':'';
+  document.getElementById('reg-male').style.borderColor=g==='male'?'var(--neon)':'';
+  document.getElementById('reg-female').style.borderColor=g==='female'?'var(--neon)':'';
   checkRegReady();
 }
 function checkRegReady(){
-  const genderOk=!!regGender;
-  const privacyOk=document.getElementById('reg-privacy').checked;
-  document.getElementById('btn-reg-finish').disabled=!(genderOk&&privacyOk);
+  document.getElementById('btn-reg-finish').disabled=!(!!regGender&&document.getElementById('reg-privacy').checked);
 }
-
 function showRegExtra(){document.getElementById('reg-extra').style.display='block';}
 function hideRegExtra(){document.getElementById('reg-extra').style.display='none';}
 function saveRegExtra(){hideRegExtra();notify('Данные сохранены, нажми "Начать!"','success');}
@@ -528,28 +518,34 @@ async function finishReg(){
   const pr=document.getElementById('reg-profession').value.trim();
   const em=document.getElementById('reg-email').value.trim();
   const ints=Array.from(document.querySelectorAll('#reg-interests .sel')).map(t=>t.dataset.id);
-  if(bt)body.birth_time=bt;
-  if(bp)body.birth_place=bp;
-  if(pr)body.profession=pr;
-  if(em)body.email=em;
+  if(bt)body.birth_time=bt;if(bp)body.birth_place=bp;if(pr)body.profession=pr;if(em)body.email=em;
   if(ints.length)body.interests=ints;
-  if(Object.keys(body).length){
-    try{await api('/profile/me','PATCH',body);}catch(e){}
-  }
-  await loadProfile();
-  showSection('horoscope');
+  if(Object.keys(body).length){try{await api('/profile/me','PATCH',body);}catch(e){}}
+  await loadProfile();showSection('horoscope');
 }
 
-// Main
-const zodiacEmoji={'Овен':'&#9800;','Телец':'&#9801;','Близнецы':'&#9802;','Рак':'&#9803;','Лев':'&#9804;','Дева':'&#9805;','Весы':'&#9806;','Скорпион':'&#9807;','Стрелец':'&#9808;','Козерог':'&#9809;','Водолей':'&#9810;','Рыбы':'&#9811;'};
+// ===== Main (Horoscope screen) =====
+function getTierBadge(tier){
+  const map={
+    'free':['Базовый','badge-free'],
+    'plus':['Plus','badge-plus'],
+    'premium':['Premium','badge-premium']
+  };
+  return map[tier]||map['free'];
+}
 
 async function loadMain(){
   if(!profile)await loadProfile();
-  document.getElementById('z-icon').innerHTML=zodiacEmoji[profile.zodiac_sign]||'&#9734;';
-  document.getElementById('user-greeting').textContent=profile.name||'';
-  document.getElementById('z-name').textContent=profile.zodiac_sign;
+  const sign=profile.zodiac_sign;
+  document.getElementById('z-anim').innerHTML=zodiacSVG[sign]||'';
+  document.getElementById('user-greeting').textContent=profile.name||'Пользователь';
+  document.getElementById('z-name').textContent=sign;
   document.getElementById('z-date').textContent=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('z-badge').textContent=profile.subscription_tier.toUpperCase();
+
+  // Tier badge
+  const [tierLabel,tierClass]=getTierBadge(profile.subscription_tier);
+  const badge=document.getElementById('z-badge');
+  badge.textContent=tierLabel;badge.className='badge '+tierClass;
 
   // Profile completeness
   const comp=profile.profile_completeness;
@@ -576,63 +572,47 @@ async function loadMain(){
   }catch(e){}
 }
 
-// Ad stub for testing (simulates ad flow)
+// Ad stub
 async function watchAdStub(){
   return new Promise((resolve)=>{
-    const overlay=document.createElement('div');
-    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;';
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;';
     let sec=3;
-    overlay.innerHTML='<div style="font-size:1.3rem;margin-bottom:16px;">Рекламная пауза</div><div style="font-size:3rem;color:var(--gold);" id="ad-timer">'+sec+'</div><div class="txt2 mt16">Подождите...</div>';
-    document.body.appendChild(overlay);
-    const iv=setInterval(()=>{
-      sec--;
-      document.getElementById('ad-timer').textContent=sec;
-      if(sec<=0){
-        clearInterval(iv);
-        overlay.innerHTML='<div style="font-size:1.3rem;margin-bottom:16px;color:var(--ok);">&#10003; Реклама просмотрена</div>';
-        setTimeout(()=>{overlay.remove();resolve(true);},500);
-      }
+    ov.innerHTML='<div style="font-size:1.3rem;margin-bottom:16px;">Рекламная пауза</div><div style="font-size:3rem;color:var(--neon);" id="ad-timer">'+sec+'</div><div class="txt2 mt16">Подождите...</div>';
+    document.body.appendChild(ov);
+    const iv=setInterval(()=>{sec--;document.getElementById('ad-timer').textContent=sec;
+      if(sec<=0){clearInterval(iv);ov.innerHTML='<div style="font-size:1.3rem;margin-bottom:16px;color:var(--ok);">&#10003; Реклама просмотрена</div>';setTimeout(()=>{ov.remove();resolve(true);},500);}
     },1000);
   });
 }
 
 async function ensureAdViewed(){
-  // 1. Request ad token
   try{
     const tkResp=await api('/ads/request-token','POST');
-    // 2. Show ad stub
     await watchAdStub();
-    // 3. Confirm ad viewed
     await api('/ads/confirm','POST',{token:tkResp.token});
     return true;
   }catch(e){
-    // Premium users or already confirmed -- no ad needed
-    if(e.message&&e.message.includes("Premium")){return true;}
-    notify(e.message,'error');
-    return false;
+    if(e.message&&e.message.includes("Premium"))return true;
+    notify(e.message,'error');return false;
   }
 }
 
 async function genHoro(type='general',focusId=null){
   const btn=document.getElementById('btn-gen');
   btn.disabled=true;btn.textContent='Подготовка...';
-
-  // For free users: need ad before generation
   if(profile&&profile.subscription_tier==='free'&&type==='general'){
     btn.textContent='Просмотр рекламы...';
     const adOk=await ensureAdViewed();
     if(!adOk){btn.disabled=false;btn.innerHTML='&#128302; Получить гороскоп';return;}
   }
-
   btn.textContent='Генерация...';
   document.getElementById('horo-result').style.display='none';
   try{
     const b={horoscope_type:type};if(focusId)b.focus_interest_id=focusId;
     const h=await api('/horoscope/generate','POST',b);
     showHoro(h);notify('Гороскоп готов!','success');
-  }catch(e){
-    notify(e.message,'error');
-  }
+  }catch(e){notify(e.message,'error');}
   btn.disabled=false;btn.innerHTML='&#128302; Получить гороскоп';
 }
 
@@ -653,8 +633,7 @@ async function feedback(t){
   if(!curHoroId)return;
   try{
     await api('/horoscope/'+curHoroId+'/feedback','POST',{feedback:t});
-    document.getElementById('btn-like').disabled=true;
-    document.getElementById('btn-dislike').disabled=true;
+    document.getElementById('btn-like').disabled=true;document.getElementById('btn-dislike').disabled=true;
     notify(t==='like'?'Спасибо за отзыв!':'Учтем, спасибо!','success');
   }catch(e){notify(e.message,'error');}
 }
@@ -688,33 +667,19 @@ async function loadFamily(){
     }
   }catch(e){notify(e.message,'error');}
 }
-
 function showAddFamily(){document.getElementById('fam-form').style.display='block';}
 function hideAddFamily(){document.getElementById('fam-form').style.display='none';}
-function famGender(g){
-  famGenderVal=g;
-  document.getElementById('fam-m').style.borderColor=g==='male'?'var(--gold)':'';
-  document.getElementById('fam-f').style.borderColor=g==='female'?'var(--gold)':'';
-}
+function famGender(g){famGenderVal=g;document.getElementById('fam-m').style.borderColor=g==='male'?'var(--neon)':'';document.getElementById('fam-f').style.borderColor=g==='female'?'var(--neon)':'';}
 
 async function addFamily(){
   if(!famGenderVal||!document.getElementById('fam-name').value||!document.getElementById('fam-birth').value||!document.getElementById('fam-rel').value){notify('Заполни все поля','error');return;}
   try{
-    await api('/profile/family','POST',{
-      name:document.getElementById('fam-name').value,
-      relation:document.getElementById('fam-rel').value,
-      birth_date:document.getElementById('fam-birth').value,
-      gender:famGenderVal
-    });
+    await api('/profile/family','POST',{name:document.getElementById('fam-name').value,relation:document.getElementById('fam-rel').value,birth_date:document.getElementById('fam-birth').value,gender:famGenderVal});
     hideAddFamily();loadFamily();notify('Член семьи добавлен!','success');
   }catch(e){notify(e.message,'error');}
 }
-
 async function genHoroFor(mid){
-  try{
-    const h=await api('/horoscope/generate','POST',{family_member_id:mid});
-    notify('Гороскоп создан!','success');
-  }catch(e){notify(e.message,'error');}
+  try{await api('/horoscope/generate','POST',{family_member_id:mid});notify('Гороскоп создан!','success');}catch(e){notify(e.message,'error');}
 }
 
 // Profile
@@ -722,10 +687,9 @@ async function loadProfile(){
   profile=await api('/profile/me');
   try{const o=await api('/profile/options');catalog=o.interests||[];}catch(e){}
 }
-
 function loadProfileScreen(){
   if(!profile)return;
-  document.getElementById('p-zodiac').innerHTML=zodiacEmoji[profile.zodiac_sign]||'';
+  document.getElementById('p-zodiac').innerHTML=zodiacSVG[profile.zodiac_sign]?'<span class="zodiac-anim" style="width:48px;height:48px;display:inline-block;">'+zodiacSVG[profile.zodiac_sign]+'</span>':'';
   document.getElementById('p-name').textContent=profile.name;
   document.getElementById('p-sign').textContent=profile.zodiac_sign;
   document.getElementById('p-birth').textContent=profile.birth_date;
@@ -738,15 +702,12 @@ function loadProfileScreen(){
     return '<span class="tag '+s+'" data-id="'+i.id+'" onclick="this.classList.toggle(\'sel\')">'+(i.icon||'')+' '+i.label_ru+'</span>';
   }).join('');
 }
-
 async function saveProfile(){
   const ints=Array.from(document.querySelectorAll('#int-tags .sel')).map(t=>t.dataset.id);
   const b={interests:ints};
   const v=id=>document.getElementById(id).value.trim();
-  if(v('ed-time'))b.birth_time=v('ed-time');
-  if(v('ed-place'))b.birth_place=v('ed-place');
-  if(v('ed-prof'))b.profession=v('ed-prof');
-  if(v('ed-email'))b.email=v('ed-email');
+  if(v('ed-time'))b.birth_time=v('ed-time');if(v('ed-place'))b.birth_place=v('ed-place');
+  if(v('ed-prof'))b.profession=v('ed-prof');if(v('ed-email'))b.email=v('ed-email');
   try{profile=await api('/profile/me','PATCH',b);notify('Профиль сохранен!','success');loadProfileScreen();}catch(e){notify(e.message,'error');}
 }
 
@@ -754,13 +715,13 @@ async function saveProfile(){
 async function loadTiers(){
   try{
     const tiers=await api('/profile/tiers');
-    document.getElementById('tiers-list').innerHTML=tiers.map(t=>
-      '<div class="card"><div class="gold" style="font-size:1.1rem;">'+t.display_name+' '+(t.price_monthly_rub?t.price_monthly_rub+' &#8381;/мес':'бесплатно')+'</div><div class="txt2 mt16" style="font-size:0.85rem;">'+(t.features.ads_free?'&#10003; Без рекламы':'&#10007; С рекламой')+'<br>Гороскопов/день: '+t.features.daily_general_limit+'<br>Фокус: '+t.features.daily_focus_limit+'/день<br>Семья: '+t.features.family_members+' чел.<br>История: '+t.features.history_depth+' записей</div></div>'
-    ).join('');
+    document.getElementById('tiers-list').innerHTML=tiers.map(t=>{
+      const [label,cls]=getTierBadge(t.id);
+      return '<div class="card" style="border:1px solid '+(t.id==='premium'?'#8b5cf6':t.id==='plus'?'#3b82f6':'transparent')+'"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span class="badge '+cls+'">'+label+'</span><span class="gold" style="font-size:1rem;">'+(t.price_monthly_rub?t.price_monthly_rub+' &#8381;/мес':'бесплатно')+'</span></div><div class="txt2" style="font-size:0.85rem;">'+(t.features.ads_free?'&#10003; Без рекламы':'&#10007; С рекламой')+'<br>Гороскопов/день: '+t.features.daily_general_limit+'<br>Фокус: '+t.features.daily_focus_limit+'/день<br>Семья: '+t.features.family_members+' чел.<br>История: '+t.features.history_depth+' записей</div></div>';
+    }).join('');
   }catch(e){notify(e.message,'error');}
 }
 
-// Legacy toast (kept for compatibility)
 function toast(m){notify(m,'info');}
 
 // Init
