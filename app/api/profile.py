@@ -362,6 +362,28 @@ async def upload_avatar(
             detail="Empty file",
         )
 
+    # Compress and resize avatar (max 300x300, JPEG quality 85)
+    try:
+        from PIL import Image
+        import io
+        img = Image.open(io.BytesIO(contents))
+        # Convert to RGB if needed (e.g. PNG with alpha)
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+        # Resize if larger than 300x300
+        max_size = (300, 300)
+        if img.width > max_size[0] or img.height > max_size[1]:
+            img.thumbnail(max_size, Image.LANCZOS)
+        # Save as optimized JPEG
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG', quality=85, optimize=True)
+        contents = buf.getvalue()
+        ext = '.jpg'
+    except ImportError:
+        pass  # Pillow not installed, save original
+    except Exception:
+        pass  # If image processing fails, save original
+
     # Save file
     AVATAR_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     filename = f"{current_user.id}{ext}"

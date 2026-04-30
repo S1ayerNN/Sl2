@@ -28,5 +28,8 @@ python-dotenv==1.0.1
 # Encryption for PII
 cryptography==43.0.1
 
+# Image processing (avatar compression)
+Pillow==10.4.0
+
 # Zodiac calculations
 ephem==4.1.5

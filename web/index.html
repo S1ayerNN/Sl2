@@ -102,7 +102,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 .field-row input,.field-row select{flex:1;margin-bottom:0}
 /* Tooltip */
 .tooltip-wrap{position:relative;display:inline-block}
-.tooltip-wrap .tooltip-text{visibility:hidden;background:var(--elev);color:var(--txt);font-size:0.78rem;padding:6px 10px;border-radius:8px;border:1px solid var(--purple);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;z-index:10;opacity:0;transition:opacity 0.2s}
+.tooltip-wrap .tooltip-text{visibility:hidden;background:var(--elev);color:var(--txt);font-size:0.78rem;padding:8px 12px;border-radius:8px;border:1px solid var(--purple);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:normal;min-width:200px;max-width:300px;text-align:center;z-index:10;opacity:0;transition:opacity 0.2s}
 .tooltip-wrap:hover .tooltip-text{visibility:visible;opacity:1}
 /* Avatar upload area */
 .avatar-upload{position:relative;width:100px;height:100px;border-radius:50%;border:2px dashed var(--purple);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:visible;flex-shrink:0;transition:border-color 0.3s}
@@ -287,7 +287,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <!-- FAMILY -->
 <div id="screen-family" class="screen">
   <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
-  <h1 class="mb16">&#128106; Семья</h1>
+  <h1 class="mb16">&#128587; Семья</h1>
   <div id="fam-list"></div>
   <div id="fam-add" style="display:none;">
     <button class="btn btn-sec" onclick="showAddFamily()">+ Добавить</button>
@@ -435,25 +435,23 @@ const zodiacEmoji={
   // Zodiac figure constellations - stars form the shape of the zodiac sign
   // Each figure: points (star positions) + lines (connections) + outline (faint figure shape)
   const zodiacFigures = {
-    // Orion - real astronomical constellation (scaled 75%, upper area)
-    orion: {
+    // Ursa Major (Big Dipper) - 7 main stars, centered around y=0.20
+    ursaMajor: {
       stars: [
-        {x:0.44,y:0.06},{x:0.46,y:0.05},{x:0.48,y:0.06}, // head (lambda, phi1, phi2)
-        {x:0.41,y:0.11},{x:0.51,y:0.10}, // shoulders (Betelgeuse, Bellatrix)
-        {x:0.44,y:0.15},{x:0.46,y:0.15},{x:0.48,y:0.15}, // belt (Alnitak, Alnilam, Mintaka)
-        {x:0.42,y:0.21},{x:0.50,y:0.20}, // knees (Saiph, Rigel)
-        {x:0.37,y:0.08},{x:0.54,y:0.07}, // arm tips
+        {x:0.38,y:0.16},{x:0.41,y:0.14},{x:0.45,y:0.14},{x:0.48,y:0.16}, // bowl
+        {x:0.52,y:0.18},{x:0.56,y:0.20},{x:0.60,y:0.19}, // handle
       ],
-      lines: [[0,1],[1,2],[0,3],[2,4],[3,5],[4,7],[5,6],[6,7],[5,8],[7,9],[3,10],[4,11]],
+      lines: [[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]],
       brightness: []
     },
-    // Cassiopeia - W shape (real constellation, scaled 75%, upper area)
-    cassiopeia: {
+    // Leo - lion constellation, centered around y=0.20
+    leo: {
       stars: [
-        {x:0.40,y:0.10},{x:0.44,y:0.06},{x:0.48,y:0.12},
-        {x:0.52,y:0.07},{x:0.56,y:0.11},
+        {x:0.38,y:0.16},{x:0.40,y:0.13},{x:0.44,y:0.12},{x:0.47,y:0.14}, // sickle head
+        {x:0.42,y:0.17},{x:0.40,y:0.20}, // sickle bottom
+        {x:0.48,y:0.18},{x:0.53,y:0.22},{x:0.57,y:0.20},{x:0.55,y:0.17}, // body
       ],
-      lines: [[0,1],[1,2],[2,3],[3,4]],
+      lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[3,6],[6,7],[7,8],[8,9],[9,6]],
       brightness: []
     }
   };
@@ -465,7 +463,7 @@ const zodiacEmoji={
     });
   });
 
-  const figureNames = ['orion','cassiopeia'];
+  const figureNames = ['ursaMajor','leo'];
   let currentFigIdx = 0;
   let figureAlpha = 1; // 0..1 opacity for current figure
   let lastSwitch = 0;
@@ -826,7 +824,7 @@ async function loadFamily(){
       addDiv.innerHTML='<div class="txt2 mb8" style="font-size:0.82rem;">Достигнут лимит: '+limit+' из '+limit+'</div>';
     }else{
       // limit=0: show button that leads to subscription
-      addDiv.innerHTML='<div class="tooltip-wrap" style="display:inline-block;"><button class="btn btn-sec" onclick="showSection(\'subscription\')">+ Добавить</button><span class="tooltip-text">Раскрой все возможности в подписке</span></div>';
+      addDiv.innerHTML='<div class="tooltip-wrap" style="display:inline-block;"><button class="btn btn-sec btn-sm" onclick="showSection(\'subscription\')" style="padding:8px 16px;">+ Добавить</button><span class="tooltip-text">Подключи подписку и получай персональные гороскопы для твоих близких каждый день</span></div>';
     }
     const sel=document.getElementById('fam-rel');
     if(sel.options.length<=1){
