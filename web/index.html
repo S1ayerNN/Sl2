@@ -97,11 +97,17 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 .profile-avatar{width:68px;height:68px;border-radius:50%;background:var(--elev);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;border:2px solid var(--purple);overflow:hidden}
 .profile-avatar img{width:100%;height:100%;object-fit:cover}
 /* Avatar upload area */
-.avatar-upload{position:relative;width:100px;height:100px;border-radius:50%;border:2px dashed var(--purple);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0;transition:border-color 0.3s}
+.avatar-upload{position:relative;width:100px;height:100px;border-radius:50%;border:2px dashed var(--purple);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:visible;flex-shrink:0;transition:border-color 0.3s}
 .avatar-upload:hover{border-color:var(--neon)}
-.avatar-upload img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.avatar-upload-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:var(--txt2);font-size:0.7rem;text-align:center;padding:4px 0}
+.avatar-upload .avatar-inner{width:100%;height:100%;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.avatar-upload img{width:100%;height:100%;object-fit:cover}
+.avatar-upload-label{position:absolute;bottom:-2px;left:0;right:0;background:rgba(0,0,0,0.6);color:var(--txt2);font-size:0.7rem;text-align:center;padding:4px 0;border-radius:0 0 50px 50px;z-index:2}
 .avatar-upload input[type="file"]{display:none}
+/* Circular upload progress */
+.avatar-loader{position:absolute;top:-4px;left:-4px;width:108px;height:108px;display:none;z-index:3}
+.avatar-loader.active{display:block}
+.avatar-loader svg{width:100%;height:100%;transform:rotate(-90deg)}
+.avatar-loader circle{fill:none;stroke:var(--neon);stroke-width:3;stroke-linecap:round;stroke-dasharray:314;stroke-dashoffset:314;transition:stroke-dashoffset 0.3s}
 /* Like/dislike - subtle theme colors */
 .btn-feedback{background:var(--elev);color:var(--txt2);border:1px solid var(--elev);transition:all 0.2s}
 .btn-feedback:hover{border-color:var(--purple);color:var(--txt)}
@@ -297,9 +303,14 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   <h1 class="mb16">Профиль</h1>
   <div class="card" style="display:flex;gap:16px;align-items:center;">
     <div class="avatar-upload" id="avatar-upload-area" onclick="document.getElementById('avatar-file').click()">
-      <img id="p-avatar-img" src="" style="display:none;">
-      <span id="p-avatar-placeholder" style="font-size:2.2rem;color:var(--txt2);">&#128247;</span>
+      <div class="avatar-inner">
+        <img id="p-avatar-img" src="" style="display:none;">
+        <span id="p-avatar-placeholder" style="font-size:2.2rem;color:var(--txt2);">&#128247;</span>
+      </div>
       <div class="avatar-upload-label">Загрузить</div>
+      <div class="avatar-loader" id="avatar-loader">
+        <svg><circle cx="54" cy="54" r="50" id="avatar-progress-circle"/></svg>
+      </div>
       <input type="file" id="avatar-file" accept="image/jpeg,image/png,image/webp,image/gif" onchange="uploadAvatar(this)">
     </div>
     <div style="flex:1;">
@@ -315,6 +326,10 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
       <div class="profile-hint" style="margin-bottom:0;">Добавь чуть больше информации о себе для уточнения прогноза</div>
       <span id="btn-edit-profile" onclick="toggleEditProfile()" style="cursor:pointer;font-size:0.78rem;color:var(--neon);white-space:nowrap;margin-left:8px;">&#9998; Изменить</span>
     </div>
+    <label class="field">Имя</label>
+    <input type="text" id="ed-name" placeholder="Имя" disabled>
+    <label class="field">Дата рождения</label>
+    <input type="date" id="ed-birthdate" disabled>
     <label class="field">Место рождения</label>
     <input type="text" id="ed-place" placeholder="Москва" disabled>
     <label class="field">Время рождения</label>
@@ -674,10 +689,10 @@ async function loadMain(){
   document.getElementById('z-name').textContent=sign;
   document.getElementById('z-date').textContent=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
 
-  // Avatar
+  // Avatar with cache busting
   const avatarEl=document.getElementById('user-avatar');
   if(profile.avatar_url){
-    avatarEl.innerHTML='<img src="'+profile.avatar_url+'" alt="avatar">';
+    avatarEl.innerHTML='<img src="'+profile.avatar_url+'?t='+Date.now()+'" alt="avatar">';
   }else{
     avatarEl.innerHTML='&#128100;';
   }
@@ -850,11 +865,11 @@ function loadProfileScreen(){
   if(!profile)return;
   profileEditMode=false;
 
-  // Avatar
+  // Avatar with cache busting
   const avatarImg=document.getElementById('p-avatar-img');
   const avatarPlaceholder=document.getElementById('p-avatar-placeholder');
   if(profile.avatar_url){
-    avatarImg.src=profile.avatar_url;avatarImg.style.display='block';avatarPlaceholder.style.display='none';
+    avatarImg.src=profile.avatar_url+'?t='+Date.now();avatarImg.style.display='block';avatarPlaceholder.style.display='none';
   }else{
     avatarImg.style.display='none';avatarPlaceholder.style.display='block';
   }
@@ -866,6 +881,8 @@ function loadProfileScreen(){
   document.getElementById('p-birth').textContent=profile.birth_date;
 
   // Fields - read-only by default
+  document.getElementById('ed-name').value=profile.name||'';
+  document.getElementById('ed-birthdate').value=profile.birth_date||'';
   document.getElementById('ed-time').value=formatBirthTime(profile.birth_time)||'';
   document.getElementById('ed-place').value=profile.birth_place||'';
   document.getElementById('ed-prof').value=profile.profession||'';
@@ -883,7 +900,7 @@ function loadProfileScreen(){
 }
 
 function setProfileFieldsDisabled(disabled){
-  ['ed-time','ed-place','ed-prof','ed-email'].forEach(id=>{
+  ['ed-name','ed-birthdate','ed-time','ed-place','ed-prof','ed-email'].forEach(id=>{
     document.getElementById(id).disabled=disabled;
   });
   document.getElementById('profile-save-area').style.display=disabled?'none':'block';
@@ -913,17 +930,55 @@ async function uploadAvatar(input){
   if(file.size>1024*1024){notify('Файл слишком большой (макс. 1 МБ)','error');return;}
   const allowed=['image/jpeg','image/png','image/webp','image/gif'];
   if(!allowed.includes(file.type)){notify('Допустимы только JPEG, PNG, WebP, GIF','error');return;}
+
+  const loader=document.getElementById('avatar-loader');
+  const circle=document.getElementById('avatar-progress-circle');
+  const circumference=314; // 2*PI*50
+  loader.classList.add('active');
+  circle.style.strokeDashoffset=circumference;
+
   const fd=new FormData();fd.append('file',file);
   try{
-    const r=await fetch(API+'/profile/me/avatar',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
-    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Ошибка загрузки');}
-    const d=await r.json();
-    profile.avatar_url=d.avatar_url;
-    document.getElementById('p-avatar-img').src=d.avatar_url;
-    document.getElementById('p-avatar-img').style.display='block';
+    const xhr=new XMLHttpRequest();
+    const result=await new Promise((resolve,reject)=>{
+      xhr.upload.addEventListener('progress',e=>{
+        if(e.lengthComputable){
+          const pct=e.loaded/e.total;
+          circle.style.strokeDashoffset=circumference*(1-pct);
+        }
+      });
+      xhr.addEventListener('load',()=>{
+        if(xhr.status>=200&&xhr.status<300){
+          resolve(JSON.parse(xhr.responseText));
+        }else{
+          try{reject(new Error(JSON.parse(xhr.responseText).detail));}
+          catch(e2){reject(new Error('Ошибка загрузки'));}
+        }
+      });
+      xhr.addEventListener('error',()=>reject(new Error('Ошибка сети')));
+      xhr.open('POST',API+'/profile/me/avatar');
+      xhr.setRequestHeader('Authorization','Bearer '+token);
+      xhr.send(fd);
+    });
+
+    // Cache busting: append timestamp
+    const avatarUrl=result.avatar_url+'?t='+Date.now();
+    profile.avatar_url=result.avatar_url;
+    const img=document.getElementById('p-avatar-img');
+    img.src=avatarUrl;
+    img.style.display='block';
     document.getElementById('p-avatar-placeholder').style.display='none';
+
+    // Also update horoscope screen avatar
+    const horoAvatar=document.getElementById('user-avatar');
+    if(horoAvatar)horoAvatar.innerHTML='<img src="'+avatarUrl+'" alt="avatar">';
+
     notify('Аватар обновлен!','success');
   }catch(e){notify(e.message,'error');}
+  finally{
+    setTimeout(()=>{loader.classList.remove('active');},500);
+  }
+  input.value=''; // reset file input
 }
 
 function openInterestsModal(){
@@ -958,9 +1013,9 @@ async function saveInterests(){
 async function saveProfile(){
   const b={};
   const v=id=>document.getElementById(id).value.trim();
+  if(v('ed-name'))b.name=v('ed-name');
   const timeVal=v('ed-time');
   if(timeVal){
-    // Auto-format: ensure HH:MM
     let formatted=timeVal.replace(/[^0-9:]/g,'');
     if(formatted.match(/^\d{3,4}$/)&&!formatted.includes(':')){
       formatted=formatted.slice(0,formatted.length-2)+':'+formatted.slice(formatted.length-2);
