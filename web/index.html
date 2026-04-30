@@ -93,9 +93,17 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 .zodiac-3d svg path,.zodiac-3d svg circle,.zodiac-3d svg line,.zodiac-3d svg polyline{stroke:var(--neon);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px rgba(167,139,250,0.5)) drop-shadow(0 0 10px rgba(123,47,247,0.3));animation:zodiacPurpleGlow 3s ease-in-out infinite}
 @keyframes zodiacPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 @keyframes zodiacPurpleGlow{0%,100%{stroke:var(--neon);filter:drop-shadow(0 0 4px rgba(167,139,250,0.4)) drop-shadow(0 0 8px rgba(123,47,247,0.2))}50%{stroke:#c4b5fd;filter:drop-shadow(0 0 8px rgba(167,139,250,0.7)) drop-shadow(0 0 16px rgba(123,47,247,0.4))}}
-/* Profile avatar - fits card height */
-.profile-avatar{width:68px;height:68px;border-radius:50%;background:var(--elev);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;border:2px solid var(--purple);overflow:hidden}
+/* Profile avatar - large on horoscope screen */
+.profile-avatar{width:120px;height:120px;border-radius:50%;background:var(--elev);display:flex;align-items:center;justify-content:center;font-size:3rem;flex-shrink:0;border:2px solid var(--purple);overflow:hidden}
 .profile-avatar img{width:100%;height:100%;object-fit:cover}
+/* Horizontal field row */
+.field-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.field-row .field-label{flex:0 0 110px;color:var(--txt2);font-size:0.82rem;text-align:left}
+.field-row input,.field-row select{flex:1;margin-bottom:0}
+/* Tooltip */
+.tooltip-wrap{position:relative;display:inline-block}
+.tooltip-wrap .tooltip-text{visibility:hidden;background:var(--elev);color:var(--txt);font-size:0.78rem;padding:6px 10px;border-radius:8px;border:1px solid var(--purple);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;z-index:10;opacity:0;transition:opacity 0.2s}
+.tooltip-wrap:hover .tooltip-text{visibility:visible;opacity:1}
 /* Avatar upload area */
 .avatar-upload{position:relative;width:100px;height:100px;border-radius:50%;border:2px dashed var(--purple);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:visible;flex-shrink:0;transition:border-color 0.3s}
 .avatar-upload:hover{border-color:var(--neon)}
@@ -159,10 +167,10 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <!-- AUTH -->
 <div id="screen-auth" class="screen active" style="padding-top:0;">
   <div class="starry-bg"><canvas id="starCanvas"></canvas></div>
-  <div class="auth-content center" style="padding-top:100px;">
+  <div class="auth-content center" style="padding-top:55vh;">
     <div class="landing-title">MY.ASTRO</div>
     <div class="txt2 mb16" style="font-size:0.95rem;margin-top:8px;">Твой персональный астролог каждый день рядом</div>
-    <div style="margin-top:50px;">
+    <div style="margin-top:40px;">
       <button class="btn btn-gold" onclick="devLogin()">Войти (тестовый режим)</button>
       <p class="txt2 mt16" style="font-size:0.82rem;">В продакшене: Telegram / Google</p>
     </div>
@@ -225,14 +233,17 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   <div class="card">
     <div class="profile-card">
       <div class="profile-avatar" id="user-avatar">&#128100;</div>
-      <div class="profile-info" style="margin-left:8px;">
+      <div class="profile-info" style="margin-left:12px;text-align:left;">
         <div class="profile-name" id="user-greeting"></div>
         <div class="profile-birth" id="z-date"></div>
         <div class="profile-zodiac">
           <span class="zodiac-3d" id="z-anim"></span>
           <span id="z-name"></span>
         </div>
-        <span id="z-badge" class="badge badge-free" style="margin-top:6px;"></span>
+        <div class="tooltip-wrap" style="margin-top:6px;" onclick="showSection('subscription')">
+          <span id="z-badge" class="badge badge-free" style="cursor:pointer;"></span>
+          <span class="tooltip-text">Раскрой все возможности в подписке</span>
+        </div>
       </div>
     </div>
   </div>
@@ -301,8 +312,8 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <div id="screen-profile" class="screen">
   <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
   <h1 class="mb16">Профиль</h1>
-  <div class="card" style="display:flex;gap:16px;align-items:center;">
-    <div class="avatar-upload" id="avatar-upload-area" onclick="document.getElementById('avatar-file').click()">
+  <div class="card center">
+    <div class="avatar-upload" id="avatar-upload-area" onclick="document.getElementById('avatar-file').click()" style="margin:0 auto 12px;">
       <div class="avatar-inner">
         <img id="p-avatar-img" src="" style="display:none;">
         <span id="p-avatar-placeholder" style="font-size:2.2rem;color:var(--txt2);">&#128247;</span>
@@ -313,41 +324,25 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
       </div>
       <input type="file" id="avatar-file" accept="image/jpeg,image/png,image/webp,image/gif" onchange="uploadAvatar(this)">
     </div>
-    <div style="flex:1;">
-      <div id="p-zodiac" style="margin-bottom:4px;"></div>
-      <div class="gold" id="p-name" style="font-size:1.1rem;"></div>
-      <div class="txt2" id="p-sign"></div>
-      <div class="txt2" id="p-birth"></div>
-    </div>
+    <div id="p-zodiac"></div>
+    <div class="txt2" id="p-sign"></div>
   </div>
   <div class="card">
-    <h2 style="margin-bottom:2px;">Данные</h2>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <div class="profile-hint" style="margin-bottom:0;">Добавь чуть больше информации о себе для уточнения прогноза</div>
-      <span id="btn-edit-profile" onclick="toggleEditProfile()" style="cursor:pointer;font-size:0.78rem;color:var(--neon);white-space:nowrap;margin-left:8px;">&#9998; Изменить</span>
-    </div>
-    <label class="field">Имя</label>
-    <input type="text" id="ed-name" placeholder="Имя" disabled>
-    <label class="field">Дата рождения</label>
-    <input type="date" id="ed-birthdate" disabled>
-    <label class="field">Место рождения</label>
-    <input type="text" id="ed-place" placeholder="Москва" disabled>
-    <label class="field">Время рождения</label>
-    <input type="text" id="ed-time" placeholder="1430" maxlength="5" disabled>
-    <label class="field">Профессия</label>
-    <input type="text" id="ed-prof" placeholder="Дизайнер" disabled>
-    <label class="field">Email</label>
-    <input type="email" id="ed-email" placeholder="ivan@example.com" disabled>
+    <div class="profile-hint" style="margin-bottom:12px;">Добавь чуть больше информации о себе для уточнения прогноза</div>
+    <div class="field-row"><span class="field-label">Имя</span><input type="text" id="ed-name" placeholder="Имя" disabled></div>
+    <div class="field-row"><span class="field-label">Дата рождения</span><input type="date" id="ed-birthdate" disabled></div>
+    <div class="field-row"><span class="field-label">Место рождения</span><input type="text" id="ed-place" placeholder="Москва" disabled></div>
+    <div class="field-row"><span class="field-label">Время рождения</span><input type="text" id="ed-time" placeholder="1430" maxlength="5" disabled></div>
+    <div class="field-row"><span class="field-label">Профессия</span><input type="text" id="ed-prof" placeholder="Дизайнер" disabled></div>
+    <div class="field-row"><span class="field-label">Email</span><input type="email" id="ed-email" placeholder="ivan@example.com" disabled></div>
+    <span id="btn-edit-profile" onclick="toggleEditProfile()" style="cursor:pointer;font-size:0.82rem;color:var(--neon);display:inline-block;margin-top:8px;">&#9998; Изменить</span>
     <div id="profile-save-area" style="display:none;">
       <button class="btn btn-gold mt16" onclick="saveProfile()">Сохранить</button>
     </div>
   </div>
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <h2 style="margin-bottom:0;">Интересы</h2>
-      <button class="btn btn-sec btn-sm" onclick="openInterestsModal()" style="width:auto;margin:0;">Редактировать</button>
-    </div>
-    <div id="int-tags-display"></div>
+    <div id="int-tags-display" style="margin-bottom:8px;"></div>
+    <span onclick="openInterestsModal()" style="cursor:pointer;font-size:0.82rem;color:var(--neon);">&#9998; Изменить</span>
   </div>
 </div>
 
@@ -431,31 +426,31 @@ const zodiacSVG={
   // Zodiac figure constellations - stars form the shape of the zodiac sign
   // Each figure: points (star positions) + lines (connections) + outline (faint figure shape)
   const zodiacFigures = {
-    // Virgo - maiden figure with wheat sheaf
+    // Virgo - maiden figure, centered in upper screen area (y: 0.10-0.42)
     virgo: {
       stars: [
-        {x:0.42,y:0.35},{x:0.45,y:0.32},{x:0.48,y:0.35}, // head
-        {x:0.45,y:0.40},{x:0.43,y:0.48},{x:0.47,y:0.48}, // torso
-        {x:0.40,y:0.55},{x:0.50,y:0.55}, // hips
-        {x:0.38,y:0.65},{x:0.52,y:0.65}, // knees
-        {x:0.37,y:0.72},{x:0.53,y:0.72}, // feet
-        {x:0.55,y:0.42},{x:0.58,y:0.38},{x:0.56,y:0.34}, // arm+wheat
-        {x:0.38,y:0.42},{x:0.34,y:0.38}, // left arm
+        {x:0.45,y:0.12},{x:0.48,y:0.10},{x:0.51,y:0.12}, // head
+        {x:0.48,y:0.16},{x:0.46,y:0.22},{x:0.50,y:0.22}, // torso
+        {x:0.44,y:0.28},{x:0.52,y:0.28}, // hips
+        {x:0.42,y:0.35},{x:0.54,y:0.35}, // knees
+        {x:0.41,y:0.40},{x:0.55,y:0.40}, // feet
+        {x:0.56,y:0.18},{x:0.59,y:0.15},{x:0.57,y:0.12}, // arm+wheat
+        {x:0.42,y:0.18},{x:0.39,y:0.15}, // left arm
       ],
       lines: [[0,1],[1,2],[0,3],[2,3],[3,4],[3,5],[4,6],[5,7],[6,8],[7,9],[8,10],[9,11],[5,12],[12,13],[13,14],[4,15],[15,16]],
-      brightness: [] // per-star random phase
+      brightness: []
     },
-    // Sagittarius - centaur archer
+    // Sagittarius - centaur archer, centered in upper screen area (y: 0.08-0.42)
     sagittarius: {
       stars: [
-        {x:0.46,y:0.30},{x:0.48,y:0.33},{x:0.44,y:0.33}, // head/bow top
-        {x:0.50,y:0.38},{x:0.42,y:0.38}, // shoulders
-        {x:0.46,y:0.44}, // center torso
-        {x:0.54,y:0.35},{x:0.58,y:0.32},{x:0.60,y:0.28}, // arrow
-        {x:0.40,y:0.50},{x:0.52,y:0.50}, // horse body
-        {x:0.36,y:0.56},{x:0.56,y:0.56}, // horse mid
-        {x:0.34,y:0.65},{x:0.38,y:0.65},{x:0.54,y:0.65},{x:0.58,y:0.65}, // legs
-        {x:0.33,y:0.72},{x:0.39,y:0.72},{x:0.53,y:0.72},{x:0.59,y:0.72}, // hooves
+        {x:0.47,y:0.10},{x:0.49,y:0.12},{x:0.45,y:0.12}, // head/bow top
+        {x:0.51,y:0.16},{x:0.43,y:0.16}, // shoulders
+        {x:0.47,y:0.21}, // center torso
+        {x:0.55,y:0.14},{x:0.59,y:0.12},{x:0.61,y:0.08}, // arrow
+        {x:0.42,y:0.26},{x:0.53,y:0.26}, // horse body
+        {x:0.38,y:0.31},{x:0.57,y:0.31}, // horse mid
+        {x:0.36,y:0.37},{x:0.40,y:0.37},{x:0.55,y:0.37},{x:0.59,y:0.37}, // legs
+        {x:0.35,y:0.42},{x:0.41,y:0.42},{x:0.54,y:0.42},{x:0.60,y:0.42}, // hooves
       ],
       lines: [[0,1],[0,2],[1,3],[2,4],[3,5],[4,5],[3,6],[6,7],[7,8],[5,9],[5,10],[9,11],[10,12],[11,13],[11,14],[12,15],[12,16],[13,17],[14,18],[15,19],[16,20]],
       brightness: []
@@ -514,9 +509,9 @@ const zodiacSVG={
     // Draw a zodiac figure
     function drawFigure(fig, alpha){
       if(alpha<=0)return;
-      // Draw lines (faint outline)
+      // Draw lines (visible outline)
       fig.lines.forEach(([a,b])=>{
-        ctx.strokeStyle='rgba(167,139,250,'+(0.08*alpha)+')';ctx.lineWidth=0.6;
+        ctx.strokeStyle='rgba(167,139,250,'+(0.25*alpha)+')';ctx.lineWidth=0.8;
         ctx.beginPath();
         ctx.moveTo(fig.stars[a].x*w,fig.stars[a].y*h);
         ctx.lineTo(fig.stars[b].x*w,fig.stars[b].y*h);
@@ -525,15 +520,15 @@ const zodiacSVG={
       // Draw stars with individual twinkling
       fig.stars.forEach((s,i)=>{
         const bri=fig.brightness[i];
-        const twinkle=0.4+0.6*((Math.sin(t*0.001*bri.speed+bri.phase)+1)/2);
+        const twinkle=0.5+0.5*((Math.sin(t*0.001*bri.speed+bri.phase)+1)/2);
         const starAlpha=twinkle*alpha;
-        const sz=1.2+twinkle*1.0;
-        // Star core
+        const sz=1.5+twinkle*1.2;
+        // Star core - brighter
         ctx.beginPath();ctx.arc(s.x*w,s.y*h,sz,0,Math.PI*2);
-        ctx.fillStyle='rgba(220,215,255,'+starAlpha*0.9+')';ctx.fill();
-        // Soft glow
-        ctx.beginPath();ctx.arc(s.x*w,s.y*h,sz+3,0,Math.PI*2);
-        ctx.fillStyle='rgba(167,139,250,'+starAlpha*0.15+')';ctx.fill();
+        ctx.fillStyle='rgba(230,225,255,'+starAlpha+')';ctx.fill();
+        // Soft glow - bigger and brighter
+        ctx.beginPath();ctx.arc(s.x*w,s.y*h,sz+5,0,Math.PI*2);
+        ctx.fillStyle='rgba(167,139,250,'+starAlpha*0.25+')';ctx.fill();
       });
     }
 
@@ -821,16 +816,16 @@ async function loadFamily(){
     }
     const lim=await api('/horoscope/limits');
     const limit=lim.family_members_limit||0;
-    const canAdd=members.length<limit;
+    const canAdd=limit>0&&members.length<limit;
     const addDiv=document.getElementById('fam-add');
-    if(limit>0){
-      addDiv.style.display='block';
-      addDiv.innerHTML=canAdd
-        ?'<div class="txt2 mb8" style="font-size:0.82rem;">'+members.length+' из '+limit+'</div><button class="btn btn-sec" onclick="showAddFamily()">+ Добавить</button>'
-        :'<div class="txt2" style="font-size:0.82rem;">Достигнут лимит: '+limit+' из '+limit+'</div>';
+    addDiv.style.display='block';
+    if(canAdd){
+      addDiv.innerHTML='<div class="txt2 mb8" style="font-size:0.82rem;">'+members.length+' из '+limit+'</div><button class="btn btn-sec" onclick="showAddFamily()">+ Добавить</button>';
+    }else if(limit>0&&members.length>=limit){
+      addDiv.innerHTML='<div class="txt2 mb8" style="font-size:0.82rem;">Достигнут лимит: '+limit+' из '+limit+'</div>';
     }else{
-      addDiv.style.display='block';
-      addDiv.innerHTML='<div class="txt2" style="font-size:0.82rem;">Доступно в платной подписке</div>';
+      // limit=0: show button that leads to subscription
+      addDiv.innerHTML='<div class="tooltip-wrap" style="display:inline-block;"><button class="btn btn-sec" onclick="showSection(\'subscription\')">+ Добавить</button><span class="tooltip-text">Раскрой все возможности в подписке</span></div>';
     }
     const sel=document.getElementById('fam-rel');
     if(sel.options.length<=1){
@@ -874,11 +869,9 @@ function loadProfileScreen(){
     avatarImg.style.display='none';avatarPlaceholder.style.display='block';
   }
 
-  // Zodiac sign - large 3D rotating
+  // Zodiac sign - purple animated (top card only shows avatar + zodiac)
   document.getElementById('p-zodiac').innerHTML=zodiacSVG[profile.zodiac_sign]?'<span class="zodiac-3d">'+zodiacSVG[profile.zodiac_sign]+'</span>':'';
-  document.getElementById('p-name').textContent=profile.name;
   document.getElementById('p-sign').textContent=profile.zodiac_sign;
-  document.getElementById('p-birth').textContent=profile.birth_date;
 
   // Fields - read-only by default
   document.getElementById('ed-name').value=profile.name||'';
