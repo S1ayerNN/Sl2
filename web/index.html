@@ -130,6 +130,10 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
       <button class="btn btn-sec flex1" id="reg-male" onclick="selectGender('male')">&#9794; Мужской</button>
       <button class="btn btn-sec flex1" id="reg-female" onclick="selectGender('female')">&#9792; Женский</button>
     </div>
+    <label class="mt16" style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#888;cursor:pointer;">
+      <input type="checkbox" id="reg-privacy" onchange="checkRegReady()" style="margin-top:3px;">
+      <span>Я соглашаюсь с <a href="/privacy.html" target="_blank" style="color:#6c5ce7;">политикой обработки персональных данных</a></span>
+    </label>
     <div class="mt16">
       <button class="btn btn-gold" id="btn-reg-finish" onclick="finishReg()" disabled>&#10024; Начать!</button>
       <button class="btn btn-sec" onclick="showRegExtra()">&#9998; Дополнить данные</button>
@@ -362,7 +366,12 @@ function selectGender(g){
   document.getElementById('reg-female').classList.toggle('tag',g!=='female');
   document.getElementById('reg-male').style.borderColor=g==='male'?'var(--gold)':'';
   document.getElementById('reg-female').style.borderColor=g==='female'?'var(--gold)':'';
-  document.getElementById('btn-reg-finish').disabled=false;
+  checkRegReady();
+}
+function checkRegReady(){
+  const genderOk=!!regGender;
+  const privacyOk=document.getElementById('reg-privacy').checked;
+  document.getElementById('btn-reg-finish').disabled=!(genderOk&&privacyOk);
 }
 
 function showRegExtra(){document.getElementById('reg-extra').style.display='block';}
