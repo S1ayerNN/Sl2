@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MyAstro</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
 :root{--bg:#0f0f23;--card:#1a1a2e;--elev:#232342;--gold:#e2b714;--purple:#7b2ff7;--neon:#a78bfa;--blue:#4361ee;--txt:#f5f5f5;--txt2:#8b8b9e;--ok:#06d6a0;--err:#ef476f}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;max-width:520px;margin:0 auto}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;max-width:520px;margin:0 auto;padding:0 4px}
 .screen{display:none;padding:16px;padding-top:60px;min-height:100vh}
 .screen.active{display:block}
 /* Top bar */
@@ -75,7 +76,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 .landing-title{font-size:2.6rem;font-weight:200;letter-spacing:10px;background:linear-gradient(90deg,#a78bfa,#c4b5fd,#ddd6fe,#a78bfa);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 4s ease infinite}
 @keyframes shimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 /* Profile card in horoscope */
-.profile-card{display:flex;gap:16px;align-items:center;text-align:left}
+.profile-card{display:flex;gap:16px;align-items:center;text-align:left;width:100%}
 .profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--elev);display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;border:2px solid var(--purple);overflow:hidden}
 .profile-avatar img{width:100%;height:100%;object-fit:cover}
 .profile-info{flex:1;min-width:0}
@@ -383,23 +384,50 @@ const zodiacSVG={
       ctx.fillStyle='rgba(255,255,255,'+(s.a*twinkle)+')';ctx.fill();
     });
 
-    // Constellation (drifts slowly)
-    const cDriftX=(driftX*0.01)%0.1;
-    const cDriftY=(driftY*0.008)%0.08;
-    const cAlpha=Math.sin(t*0.0005)*0.15+0.45;
-    ctx.strokeStyle='rgba(167,139,250,'+cAlpha*0.4+')';ctx.lineWidth=1;
+    // Constellation (static position, with tracing animation)
+    const cAlpha=0.5;
+    // Draw all lines dim
+    ctx.strokeStyle='rgba(167,139,250,0.15)';ctx.lineWidth=1;
     cLines.forEach(([a,b])=>{
       ctx.beginPath();
-      ctx.moveTo((cPoints[a].x+cDriftX)*w,(cPoints[a].y+cDriftY)*h);
-      ctx.lineTo((cPoints[b].x+cDriftX)*w,(cPoints[b].y+cDriftY)*h);
+      ctx.moveTo(cPoints[a].x*w,cPoints[a].y*h);
+      ctx.lineTo(cPoints[b].x*w,cPoints[b].y*h);
       ctx.stroke();
     });
-    cPoints.forEach(p=>{
-      const px=(p.x+cDriftX)*w, py=(p.y+cDriftY)*h;
-      ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);
-      ctx.fillStyle='rgba(167,139,250,'+cAlpha+')';ctx.fill();
-      ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);
-      ctx.fillStyle='rgba(167,139,250,'+cAlpha*0.15+')';ctx.fill();
+    // Animated bright trace along lines
+    const traceSpeed=0.0004;
+    const totalLines=cLines.length;
+    const tracePos=(t*traceSpeed)%totalLines;
+    const activeLineIdx=Math.floor(tracePos);
+    const lineFrac=tracePos-activeLineIdx;
+    // Draw bright trailing lines (last 3 lines)
+    for(let k=0;k<3;k++){
+      const li=(activeLineIdx-k+totalLines)%totalLines;
+      const [a2,b2]=cLines[li];
+      const bright=k===0?0.8:k===1?0.4:0.2;
+      ctx.strokeStyle='rgba(167,139,250,'+bright+')';ctx.lineWidth=k===0?2:1;
+      ctx.beginPath();
+      ctx.moveTo(cPoints[a2].x*w,cPoints[a2].y*h);
+      if(k===0){
+        const ex=cPoints[a2].x+(cPoints[b2].x-cPoints[a2].x)*lineFrac;
+        const ey=cPoints[a2].y+(cPoints[b2].y-cPoints[a2].y)*lineFrac;
+        ctx.lineTo(ex*w,ey*h);
+      }else{
+        ctx.lineTo(cPoints[b2].x*w,cPoints[b2].y*h);
+      }
+      ctx.stroke();
+    }
+    // Draw star points
+    cPoints.forEach((p,i)=>{
+      // Check if this point is near the trace head
+      const [ha,hb]=cLines[activeLineIdx];
+      const isActive=(i===ha||i===hb);
+      const glow=isActive?0.8:0.4;
+      const sz=isActive?3:2;
+      ctx.beginPath();ctx.arc(p.x*w,p.y*h,sz,0,Math.PI*2);
+      ctx.fillStyle='rgba(167,139,250,'+glow+')';ctx.fill();
+      ctx.beginPath();ctx.arc(p.x*w,p.y*h,sz+4,0,Math.PI*2);
+      ctx.fillStyle='rgba(167,139,250,'+(glow*0.15)+')';ctx.fill();
     });
 
     // Shooting stars
