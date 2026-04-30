@@ -233,16 +233,22 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   <div class="card">
     <div class="profile-card">
       <div class="profile-avatar" id="user-avatar">&#128100;</div>
-      <div class="profile-info" style="margin-left:12px;text-align:left;">
-        <div class="profile-name" id="user-greeting"></div>
-        <div class="profile-birth" id="z-date"></div>
-        <div class="profile-zodiac">
-          <span class="zodiac-3d" id="z-anim"></span>
-          <span id="z-name"></span>
-        </div>
-        <div class="tooltip-wrap" style="margin-top:6px;" onclick="showSection('subscription')">
-          <span id="z-badge" class="badge badge-free" style="cursor:pointer;"></span>
-          <span class="tooltip-text">Раскрой все возможности в подписке</span>
+      <div class="profile-info" style="margin-left:12px;text-align:left;flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div class="profile-name" id="user-greeting"></div>
+            <div class="profile-birth txt2" id="z-date" style="font-size:0.82rem;"></div>
+          </div>
+          <div style="text-align:right;">
+            <div class="profile-zodiac" style="justify-content:flex-end;">
+              <span class="zodiac-3d" id="z-anim"></span>
+              <span id="z-name"></span>
+            </div>
+            <div class="tooltip-wrap" style="margin-top:4px;" onclick="showSection('subscription')">
+              <span id="z-badge" class="badge badge-free" style="cursor:pointer;"></span>
+              <span class="tooltip-text">Раскрой все возможности в подписке</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -811,9 +817,21 @@ async function loadFamily(){
   try{
     const members=await api('/profile/family');
     const el=document.getElementById('fam-list');
+    const relLabels={spouse:profile.gender==='male'?'Жена':'Муж',partner:profile.gender==='male'?'Девушка':'Молодой человек',child:'Ребёнок',parent:'Родитель',sibling:'Брат/Сестра'};
     if(members.length){
-      const relLabels={spouse:profile.gender==='male'?'Жена':'Муж',partner:profile.gender==='male'?'Девушка':'Молодой человек',child:'Ребёнок',parent:'Родитель',sibling:'Брат/Сестра'};
-      el.innerHTML=members.map(m=>'<div class="card"><div class="gold">'+m.name+'</div><div class="txt2">'+(relLabels[m.relation]||m.relation)+' &middot; '+m.zodiac_sign+' &middot; '+m.birth_date+'</div><button class="btn btn-sec btn-sm mt16" onclick="genHoroFor(\''+m.id+'\')">&#128302; Гороскоп</button></div>').join('');
+      el.innerHTML=members.map(m=>{
+        const relName=relLabels[m.relation]||m.relation;
+        return '<div class="card">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+            '<div><span class="gold" style="font-size:1.05rem;">'+m.name+'</span><span class="txt2">, '+relName+'</span></div>'+
+            '<span class="txt2" style="cursor:pointer;font-size:0.78rem;" onclick="deleteFamily(\''+m.id+'\')">&#128465;</span>'+
+          '</div>'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+            '<span class="txt2" style="font-size:0.85rem;">'+m.birth_date+' &middot; '+m.zodiac_sign+'</span>'+
+            '<button class="btn btn-sec btn-sm" onclick="genHoroFor(\''+m.id+'\')" style="margin:0;padding:6px 14px;">&#128302; Гороскоп</button>'+
+          '</div>'+
+        '</div>';
+      }).join('');
     }else{
       el.innerHTML='<div class="card center txt2">Пока никто не добавлен</div>';
     }
@@ -823,12 +841,11 @@ async function loadFamily(){
     const addDiv=document.getElementById('fam-add');
     addDiv.style.display='block';
     if(canAdd){
-      addDiv.innerHTML='<div class="txt2 mb8" style="font-size:0.82rem;">'+members.length+' из '+limit+'</div><button class="btn btn-sec" onclick="showAddFamily()">+ Добавить</button>';
-    }else if(limit>0&&members.length>=limit){
-      addDiv.innerHTML='<div class="txt2 mb8" style="font-size:0.82rem;">Достигнут лимит: '+limit+' из '+limit+'</div>';
+      addDiv.innerHTML='<div class="txt2 mb8" style="font-size:0.82rem;">'+members.length+' из '+limit+'</div><button class="btn btn-sec btn-sm" onclick="showAddFamily()" style="padding:8px 16px;">+ Добавить</button>';
     }else{
-      // limit=0: show button that leads to subscription
-      addDiv.innerHTML='<div class="tooltip-wrap" style="display:inline-block;"><button class="btn btn-sec btn-sm" onclick="showSection(\'subscription\')" style="padding:8px 16px;">+ Добавить</button><span class="tooltip-text">Подключи подписку и получай персональные гороскопы для твоих близких каждый день</span></div>';
+      // limit reached or 0: show add button that leads to subscription
+      const addAction=limit>0?'notify(&quot;Достигнут лимит&quot;,&quot;info&quot;)':'showSection(&quot;subscription&quot;)';
+      addDiv.innerHTML='<div class="tooltip-wrap" style="display:inline-block;"><button class="btn btn-sec btn-sm" onclick="'+addAction+'" style="padding:8px 16px;">+ Добавить</button><span class="tooltip-text">Подключи подписку и получай персональные гороскопы для твоих близких каждый день</span></div>';
     }
     // Gender-dependent relation labels
     const sel=document.getElementById('fam-rel');
@@ -862,6 +879,14 @@ async function addFamily(){
     hideAddFamily();loadFamily();notify('Член семьи добавлен!','success');
   }catch(e){notify(e.message,'error');}
 }
+async function deleteFamily(mid){
+  if(!confirm('Удалить этого члена семьи?'))return;
+  try{
+    await api('/profile/family/'+mid,'DELETE');
+    loadFamily();notify('Удалено','success');
+  }catch(e){notify(e.message,'error');}
+}
+
 async function genHoroFor(mid){
   try{
     const h=await api('/horoscope/generate','POST',{horoscope_type:'general',family_member_id:mid});
