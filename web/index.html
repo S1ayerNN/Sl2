@@ -51,8 +51,22 @@ input:focus,select:focus{outline:none;border-color:var(--purple)}
 .spinner{display:inline-block;width:36px;height:36px;border:3px solid var(--elev);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.75rem;background:var(--purple)}
+/* Notification toasts - top right */
+.notif-container{position:fixed;top:60px;right:16px;z-index:400;display:flex;flex-direction:column;gap:8px;max-width:340px}
+.notif{padding:12px 16px;border-radius:12px;font-size:0.88rem;animation:notifIn 0.3s ease;box-shadow:0 4px 16px rgba(0,0,0,0.3);cursor:pointer;line-height:1.4}
+.notif-info{background:var(--elev);border:1px solid var(--purple);color:var(--txt)}
+.notif-error{background:#2a1525;border:1px solid var(--err);color:var(--err)}
+.notif-success{background:#152a1a;border:1px solid var(--ok);color:var(--ok)}
+@keyframes notifIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
 .toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--elev);padding:10px 20px;border-radius:12px;border:1px solid var(--purple);z-index:300;display:none;font-size:0.9rem}
 label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
+/* Back button */
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--txt2);font-size:0.9rem;cursor:pointer;margin-bottom:12px;padding:4px 0}
+.back-btn:hover{color:var(--gold)}
+/* Starry sky animation */
+.starry-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;overflow:hidden}
+.starry-bg canvas{width:100%;height:100%}
+.auth-content{position:relative;z-index:1}
 </style>
 </head>
 <body>
@@ -73,7 +87,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   
   <div class="drawer-section">Разделы</div>
   <div class="drawer-item active" data-section="horoscope" onclick="showSection('horoscope')">&#128302; Гороскоп</div>
-  <div class="drawer-item" data-section="history" onclick="showSection('history')">&#128220; История</div>
+  <div class="drawer-item" data-section="history" onclick="showSection('history')">&#128220; Предыдущие гороскопы</div>
   <div class="drawer-item" data-section="family" onclick="showSection('family')">&#128106; Семья</div>
   
   <div class="drawer-section">Будущие разделы</div>
@@ -90,12 +104,14 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   </div>
 </div>
 
+<!-- Notifications container (top-right) -->
+<div class="notif-container" id="notif-container"></div>
 <div id="toast" class="toast"></div>
 
 <!-- AUTH -->
 <div id="screen-auth" class="screen active" style="padding-top:0;">
-  <div class="center" style="padding-top:100px;">
-    <div style="font-size:3.5rem;margin-bottom:12px;">&#10024; &#9734; &#10024;</div>
+  <div class="starry-bg"><canvas id="starCanvas"></canvas></div>
+  <div class="auth-content center" style="padding-top:100px;">
     <div style="font-size:2rem;font-weight:200;letter-spacing:8px;color:var(--gold);">MYASTRO</div>
     <div class="txt2 mb16">Персональный AI-астролог</div>
     <div style="margin-top:50px;">
@@ -164,7 +180,8 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <div id="screen-horoscope" class="screen">
   <div class="card center">
     <div id="z-icon" class="zodiac-big"></div>
-    <div id="z-name" class="gold" style="font-size:1.2rem;"></div>
+    <div id="user-greeting" class="gold" style="font-size:1.15rem;margin-bottom:4px;"></div>
+    <div id="z-name" class="txt2" style="font-size:1rem;"></div>
     <div class="txt2" id="z-date"></div>
     <span id="z-badge" class="badge mt16"></span>
   </div>
@@ -193,20 +210,25 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   </div>
 
   <div id="hint-card" class="card mt16" style="display:none;">
-    <div class="txt2 mb8">Заполни профиль для точных прогнозов</div>
-    <div class="pbar"><div class="pfill" id="comp-bar" style="width:0%"></div></div>
-    <div class="txt2" style="font-size:0.82rem;" id="comp-txt">0%</div>
+    <div id="hint-content">
+      <div class="txt2 mb8">Заполни профиль для точных прогнозов</div>
+      <div class="pbar"><div class="pfill" id="comp-bar" style="width:0%"></div></div>
+      <div class="txt2" style="font-size:0.82rem;" id="comp-txt">0%</div>
+    </div>
+    <button class="btn btn-sec btn-sm mt16" onclick="showSection('profile')" id="hint-edit-btn" style="width:auto;margin:8px auto 0;display:inline-block;">&#9998; Редактировать профиль</button>
   </div>
 </div>
 
 <!-- HISTORY -->
 <div id="screen-history" class="screen">
-  <h1 class="mb16">&#128220; История</h1>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
+  <h1 class="mb16">&#128220; Предыдущие гороскопы</h1>
   <div id="hist-list"></div>
 </div>
 
 <!-- FAMILY -->
 <div id="screen-family" class="screen">
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
   <h1 class="mb16">&#128106; Семья</h1>
   <div id="fam-list"></div>
   <div id="fam-add" style="display:none;">
@@ -230,6 +252,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 
 <!-- PROFILE -->
 <div id="screen-profile" class="screen">
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
   <h1 class="mb16">&#128100; Профиль</h1>
   <div class="card center">
     <div id="p-zodiac" style="font-size:2.5rem;"></div>
@@ -255,21 +278,23 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 
 <!-- SUBSCRIPTION -->
 <div id="screen-subscription" class="screen">
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
   <h1 class="mb16">&#11088; Подписка</h1>
   <div id="tiers-list"></div>
 </div>
 
 <!-- SETTINGS -->
 <div id="screen-settings" class="screen">
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
   <h1 class="mb16">&#9881; Настройки</h1>
   <div class="card">
-    <div class="drawer-item" onclick="toast('Скоро!')">&#128276; Уведомления</div>
-    <div class="drawer-item" onclick="toast('Скоро!')">&#127763; Темная / светлая тема</div>
-    <div class="drawer-item" onclick="toast('Скоро!')">&#127760; Язык</div>
+    <div class="drawer-item" onclick="notify('Скоро!','info')">&#128276; Уведомления</div>
+    <div class="drawer-item" onclick="notify('Скоро!','info')">&#127763; Темная / светлая тема</div>
+    <div class="drawer-item" onclick="notify('Скоро!','info')">&#127760; Язык</div>
   </div>
   <div class="card">
     <div class="txt2 mb8">Версия 0.1.0 (MVP)</div>
-    <div class="txt2" style="font-size:0.8rem;">Политика конфиденциальности</div>
+    <a href="/privacy.html" target="_blank" class="txt2" style="font-size:0.8rem;text-decoration:underline;">Политика конфиденциальности</a>
   </div>
 </div>
 
@@ -277,6 +302,116 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 const API='/api/v1';
 let token=localStorage.getItem('at');
 let curHoroId=null, profile=null, catalog=[], regGender='', famGenderVal='';
+
+// ===== Starry Sky Animation =====
+(function initStars(){
+  const canvas=document.getElementById('starCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  let w,h,stars=[],constellation=[];
+  function resize(){
+    w=canvas.width=window.innerWidth;
+    h=canvas.height=window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  // Generate stars
+  for(let i=0;i<200;i++){
+    stars.push({
+      x:Math.random()*2000,y:Math.random()*2000,
+      r:Math.random()*1.5+0.3,
+      a:Math.random()*0.8+0.2,
+      speed:Math.random()*0.0003+0.0001,
+      phase:Math.random()*Math.PI*2
+    });
+  }
+
+  // Constellation (Leo / lion shape)
+  const cPoints=[
+    {x:0.38,y:0.28},{x:0.42,y:0.22},{x:0.48,y:0.20},{x:0.52,y:0.23},
+    {x:0.50,y:0.30},{x:0.46,y:0.34},{x:0.42,y:0.32},{x:0.38,y:0.28},
+    {x:0.46,y:0.34},{x:0.50,y:0.42},{x:0.55,y:0.48},{x:0.60,y:0.44},
+    {x:0.63,y:0.48},{x:0.60,y:0.52}
+  ];
+  const cLines=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0],[5,8],[8,9],[9,10],[10,11],[11,12],[12,13]];
+
+  function draw(t){
+    ctx.clearRect(0,0,w,h);
+
+    // Background gradient
+    const grd=ctx.createRadialGradient(w*0.5,h*0.4,0,w*0.5,h*0.4,w*0.7);
+    grd.addColorStop(0,'#0a0a1e');
+    grd.addColorStop(0.5,'#0f0f23');
+    grd.addColorStop(1,'#070714');
+    ctx.fillStyle=grd;
+    ctx.fillRect(0,0,w,h);
+
+    // Stars with twinkling
+    stars.forEach(s=>{
+      const twinkle=Math.sin(t*s.speed*1000+s.phase)*0.3+0.7;
+      const sx=s.x%w, sy=s.y%h;
+      ctx.beginPath();
+      ctx.arc(sx,sy,s.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,'+(s.a*twinkle)+')';
+      ctx.fill();
+    });
+
+    // Constellation
+    const cAlpha=Math.sin(t*0.0005)*0.15+0.45;
+    // Lines
+    ctx.strokeStyle='rgba(226,183,20,'+cAlpha*0.4+')';
+    ctx.lineWidth=1;
+    cLines.forEach(([a,b])=>{
+      ctx.beginPath();
+      ctx.moveTo(cPoints[a].x*w,cPoints[a].y*h);
+      ctx.lineTo(cPoints[b].x*w,cPoints[b].y*h);
+      ctx.stroke();
+    });
+    // Points
+    cPoints.forEach(p=>{
+      ctx.beginPath();
+      ctx.arc(p.x*w,p.y*h,2.5,0,Math.PI*2);
+      ctx.fillStyle='rgba(226,183,20,'+cAlpha+')';
+      ctx.fill();
+      // glow
+      ctx.beginPath();
+      ctx.arc(p.x*w,p.y*h,6,0,Math.PI*2);
+      ctx.fillStyle='rgba(226,183,20,'+cAlpha*0.15+')';
+      ctx.fill();
+    });
+
+    // Occasional shooting star
+    if(Math.random()<0.002){
+      const sx2=Math.random()*w,sy2=Math.random()*h*0.5;
+      const angle=Math.PI*0.2+Math.random()*0.3;
+      const len=80+Math.random()*60;
+      const grad=ctx.createLinearGradient(sx2,sy2,sx2+Math.cos(angle)*len,sy2+Math.sin(angle)*len);
+      grad.addColorStop(0,'rgba(255,255,255,0.8)');
+      grad.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.strokeStyle=grad;
+      ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(sx2,sy2);
+      ctx.lineTo(sx2+Math.cos(angle)*len,sy2+Math.sin(angle)*len);
+      ctx.stroke();
+    }
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+// ===== Notifications (top-right) =====
+function notify(msg, type='info', duration=4000){
+  const container=document.getElementById('notif-container');
+  const el=document.createElement('div');
+  el.className='notif notif-'+type;
+  el.textContent=msg;
+  el.onclick=()=>el.remove();
+  container.appendChild(el);
+  setTimeout(()=>{if(el.parentNode)el.remove();},duration);
+}
 
 // Drawer
 function toggleDrawer(){
@@ -286,7 +421,9 @@ function toggleDrawer(){
 
 // Sections (inside main app, not auth/reg)
 function showSection(name){
-  toggleDrawer();
+  // Close drawer if open
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   document.querySelectorAll('.drawer-item[data-section]').forEach(d=>{
@@ -303,14 +440,17 @@ function showSection(name){
 async function devLogin(){
   try{
     const r=await fetch(API+'/auth/dev-login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-    if(!r.ok)throw new Error('fail');
+    if(!r.ok){
+      const d=await r.json().catch(()=>({}));
+      throw new Error(d.detail||'Login failed');
+    }
     const d=await r.json();
     token=d.access_token;
     localStorage.setItem('at',token);
     await loadProfile();
     showSection('horoscope');
     document.querySelector('.topbar').style.display='flex';
-  }catch(e){toast('Ошибка: '+e.message);}
+  }catch(e){notify(e.message,'error');}
 }
 
 function logout(){
@@ -319,7 +459,8 @@ function logout(){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-auth').classList.add('active');
   document.querySelector('.topbar').style.display='none';
-  toggleDrawer();
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
 }
 
 // API
@@ -327,8 +468,8 @@ async function api(p,m='GET',b=null){
   const o={method:m,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
   if(b)o.body=JSON.stringify(b);
   const r=await fetch(API+p,o);
-  if(r.status===401){logout();throw new Error('Unauthorized');}
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Error '+r.status);}
+  if(r.status===401){logout();throw new Error('Сессия истекла, войдите заново');}
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Ошибка сервера ('+r.status+')');}
   if(r.status===204)return null;
   const t=await r.text();return t?JSON.parse(t):null;
 }
@@ -342,7 +483,7 @@ function calcZodiac(m,d){
 
 function regStep2(){
   const n=document.getElementById('reg-name').value.trim();
-  if(n.length<2){toast('Введи имя (мин 2 символа)');return;}
+  if(n.length<2){notify('Введи имя (минимум 2 символа)','error');return;}
   document.getElementById('reg-step1').style.display='none';
   document.getElementById('reg-step2').style.display='block';
   document.getElementById('reg-birth').addEventListener('change',function(){
@@ -352,7 +493,7 @@ function regStep2(){
 }
 
 function regStep3(){
-  if(!document.getElementById('reg-birth').value){toast('Укажи дату рождения');return;}
+  if(!document.getElementById('reg-birth').value){notify('Укажи дату рождения','error');return;}
   document.getElementById('reg-step2').style.display='none';
   document.getElementById('reg-step3').style.display='block';
   // Render interest tags for extra section
@@ -376,14 +517,11 @@ function checkRegReady(){
 
 function showRegExtra(){document.getElementById('reg-extra').style.display='block';}
 function hideRegExtra(){document.getElementById('reg-extra').style.display='none';}
-function saveRegExtra(){hideRegExtra();toast('Данные сохранены, нажми "Начать!"');}
+function saveRegExtra(){hideRegExtra();notify('Данные сохранены, нажми "Начать!"','success');}
 
 async function finishReg(){
-  if(!regGender){toast('Выбери пол');return;}
-  // TODO: when real auth, this would be part of auth flow
-  // For dev, we just save extra data to profile after login
+  if(!regGender){notify('Выбери пол','error');return;}
   await devLogin();
-  // Save extra fields if filled
   const body={};
   const bt=document.getElementById('reg-birth-time').value;
   const bp=document.getElementById('reg-birth-place').value.trim();
@@ -408,12 +546,26 @@ const zodiacEmoji={'Овен':'&#9800;','Телец':'&#9801;','Близнецы
 async function loadMain(){
   if(!profile)await loadProfile();
   document.getElementById('z-icon').innerHTML=zodiacEmoji[profile.zodiac_sign]||'&#9734;';
+  document.getElementById('user-greeting').textContent=profile.name||'';
   document.getElementById('z-name').textContent=profile.zodiac_sign;
   document.getElementById('z-date').textContent=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
   document.getElementById('z-badge').textContent=profile.subscription_tier.toUpperCase();
-  document.getElementById('comp-bar').style.width=profile.profile_completeness+'%';
-  document.getElementById('comp-txt').textContent=profile.profile_completeness+'%';
-  document.getElementById('hint-card').style.display=profile.profile_completeness<100?'block':'none';
+
+  // Profile completeness
+  const comp=profile.profile_completeness;
+  const hintCard=document.getElementById('hint-card');
+  const hintContent=document.getElementById('hint-content');
+  const hintBtn=document.getElementById('hint-edit-btn');
+  if(comp>=100){
+    hintCard.style.display='block';
+    hintContent.innerHTML='<div style="display:flex;align-items:center;gap:8px;justify-content:center;"><span style="font-size:1.5rem;color:var(--ok);">&#10003;</span><span style="color:var(--ok);">Профиль полностью заполнен</span></div>';
+    hintBtn.style.display='none';
+  }else{
+    hintCard.style.display='block';
+    hintContent.innerHTML='<div class="txt2 mb8">Заполни профиль для точных прогнозов</div><div class="pbar"><div class="pfill" style="width:'+comp+'%"></div></div><div class="txt2" style="font-size:0.82rem;">'+comp+'%</div>';
+    hintBtn.style.display='inline-block';
+  }
+
   try{const t=await api('/horoscope/today');if(t)showHoro(t);}catch(e){}
   try{
     const lim=await api('/horoscope/limits');
@@ -424,15 +576,63 @@ async function loadMain(){
   }catch(e){}
 }
 
+// Ad stub for testing (simulates ad flow)
+async function watchAdStub(){
+  return new Promise((resolve)=>{
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;';
+    let sec=3;
+    overlay.innerHTML='<div style="font-size:1.3rem;margin-bottom:16px;">Рекламная пауза</div><div style="font-size:3rem;color:var(--gold);" id="ad-timer">'+sec+'</div><div class="txt2 mt16">Подождите...</div>';
+    document.body.appendChild(overlay);
+    const iv=setInterval(()=>{
+      sec--;
+      document.getElementById('ad-timer').textContent=sec;
+      if(sec<=0){
+        clearInterval(iv);
+        overlay.innerHTML='<div style="font-size:1.3rem;margin-bottom:16px;color:var(--ok);">&#10003; Реклама просмотрена</div>';
+        setTimeout(()=>{overlay.remove();resolve(true);},500);
+      }
+    },1000);
+  });
+}
+
+async function ensureAdViewed(){
+  // 1. Request ad token
+  try{
+    const tkResp=await api('/ads/request-token','POST');
+    // 2. Show ad stub
+    await watchAdStub();
+    // 3. Confirm ad viewed
+    await api('/ads/confirm','POST',{token:tkResp.token});
+    return true;
+  }catch(e){
+    // Premium users or already confirmed -- no ad needed
+    if(e.message&&e.message.includes("Premium")){return true;}
+    notify(e.message,'error');
+    return false;
+  }
+}
+
 async function genHoro(type='general',focusId=null){
   const btn=document.getElementById('btn-gen');
-  btn.disabled=true;btn.textContent='Генерация...';
+  btn.disabled=true;btn.textContent='Подготовка...';
+
+  // For free users: need ad before generation
+  if(profile&&profile.subscription_tier==='free'&&type==='general'){
+    btn.textContent='Просмотр рекламы...';
+    const adOk=await ensureAdViewed();
+    if(!adOk){btn.disabled=false;btn.innerHTML='&#128302; Получить гороскоп';return;}
+  }
+
+  btn.textContent='Генерация...';
   document.getElementById('horo-result').style.display='none';
   try{
     const b={horoscope_type:type};if(focusId)b.focus_interest_id=focusId;
     const h=await api('/horoscope/generate','POST',b);
-    showHoro(h);toast('Готово!');
-  }catch(e){toast(e.message);}
+    showHoro(h);notify('Гороскоп готов!','success');
+  }catch(e){
+    notify(e.message,'error');
+  }
   btn.disabled=false;btn.innerHTML='&#128302; Получить гороскоп';
 }
 
@@ -455,8 +655,8 @@ async function feedback(t){
     await api('/horoscope/'+curHoroId+'/feedback','POST',{feedback:t});
     document.getElementById('btn-like').disabled=true;
     document.getElementById('btn-dislike').disabled=true;
-    toast(t==='like'?'Спасибо!':'Учтем!');
-  }catch(e){toast(e.message);}
+    notify(t==='like'?'Спасибо за отзыв!':'Учтем, спасибо!','success');
+  }catch(e){notify(e.message,'error');}
 }
 
 // History
@@ -470,7 +670,7 @@ async function loadHistory(){
       const ic=h.horoscope_type==='focused'?'&#127919;':'&#128302;';
       return '<div class="card"><div class="flex mb8" style="justify-content:space-between;"><span>'+ic+' '+h.horoscope_date+'</span><span>'+fb+'</span></div><div class="horo-text" style="font-size:0.92rem;">'+h.horoscope_text.substring(0,200)+'...</div></div>';
     }).join('');
-  }catch(e){toast(e.message);}
+  }catch(e){notify(e.message,'error');}
 }
 
 // Family
@@ -481,13 +681,12 @@ async function loadFamily(){
     el.innerHTML=members.map(m=>'<div class="card"><div class="gold">'+m.name+'</div><div class="txt2">'+m.relation+' &middot; '+m.zodiac_sign+' &middot; '+m.birth_date+'</div><button class="btn btn-sec btn-sm mt16" onclick="genHoroFor(\''+m.id+'\')">&#128302; Гороскоп</button></div>').join('');
     const lim=await api('/horoscope/limits');
     document.getElementById('fam-add').style.display=lim.family_members_limit>0?'block':'none';
-    // Populate relation select
     const sel=document.getElementById('fam-rel');
     if(sel.options.length<=1){
       const opts=await api('/profile/options');
       (opts.relations||[]).forEach(r=>{const o=document.createElement('option');o.value=r.value;o.textContent=r.label_ru;sel.appendChild(o);});
     }
-  }catch(e){toast(e.message);}
+  }catch(e){notify(e.message,'error');}
 }
 
 function showAddFamily(){document.getElementById('fam-form').style.display='block';}
@@ -499,7 +698,7 @@ function famGender(g){
 }
 
 async function addFamily(){
-  if(!famGenderVal||!document.getElementById('fam-name').value||!document.getElementById('fam-birth').value||!document.getElementById('fam-rel').value){toast('Заполни все поля');return;}
+  if(!famGenderVal||!document.getElementById('fam-name').value||!document.getElementById('fam-birth').value||!document.getElementById('fam-rel').value){notify('Заполни все поля','error');return;}
   try{
     await api('/profile/family','POST',{
       name:document.getElementById('fam-name').value,
@@ -507,15 +706,15 @@ async function addFamily(){
       birth_date:document.getElementById('fam-birth').value,
       gender:famGenderVal
     });
-    hideAddFamily();loadFamily();toast('Добавлен!');
-  }catch(e){toast(e.message);}
+    hideAddFamily();loadFamily();notify('Член семьи добавлен!','success');
+  }catch(e){notify(e.message,'error');}
 }
 
 async function genHoroFor(mid){
   try{
     const h=await api('/horoscope/generate','POST',{family_member_id:mid});
-    toast('Гороскоп для '+h.horoscope_text.substring(0,30)+'...');
-  }catch(e){toast(e.message);}
+    notify('Гороскоп создан!','success');
+  }catch(e){notify(e.message,'error');}
 }
 
 // Profile
@@ -548,7 +747,7 @@ async function saveProfile(){
   if(v('ed-place'))b.birth_place=v('ed-place');
   if(v('ed-prof'))b.profession=v('ed-prof');
   if(v('ed-email'))b.email=v('ed-email');
-  try{profile=await api('/profile/me','PATCH',b);toast('Сохранено!');loadProfileScreen();}catch(e){toast(e.message);}
+  try{profile=await api('/profile/me','PATCH',b);notify('Профиль сохранен!','success');loadProfileScreen();}catch(e){notify(e.message,'error');}
 }
 
 // Tiers
@@ -558,11 +757,11 @@ async function loadTiers(){
     document.getElementById('tiers-list').innerHTML=tiers.map(t=>
       '<div class="card"><div class="gold" style="font-size:1.1rem;">'+t.display_name+' '+(t.price_monthly_rub?t.price_monthly_rub+' &#8381;/мес':'бесплатно')+'</div><div class="txt2 mt16" style="font-size:0.85rem;">'+(t.features.ads_free?'&#10003; Без рекламы':'&#10007; С рекламой')+'<br>Гороскопов/день: '+t.features.daily_general_limit+'<br>Фокус: '+t.features.daily_focus_limit+'/день<br>Семья: '+t.features.family_members+' чел.<br>История: '+t.features.history_depth+' записей</div></div>'
     ).join('');
-  }catch(e){toast(e.message);}
+  }catch(e){notify(e.message,'error');}
 }
 
-// Utils
-function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',3000);}
+// Legacy toast (kept for compatibility)
+function toast(m){notify(m,'info');}
 
 // Init
 if(!token){document.querySelector('.topbar').style.display='none';}
