@@ -32,3 +32,6 @@ alembic/versions/*.pyc
 
 # Docker
 docker-compose.override.yml
+
+# Uploads
+uploads/

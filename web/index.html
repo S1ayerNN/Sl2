@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#0f0f23;--card:#1a1a2e;--elev:#232342;--gold:#e2b714;--purple:#7b2ff7;--neon:#a78bfa;--blue:#4361ee;--txt:#f5f5f5;--txt2:#8b8b9e;--ok:#06d6a0;--err:#ef476f}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;max-width:520px;margin:0 auto;padding:0 4px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;max-width:520px;margin:0 auto;padding:0}
 .screen{display:none;padding:16px;padding-top:60px;min-height:100vh}
 .screen.active{display:block}
 /* Top bar */
@@ -77,17 +77,43 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 @keyframes shimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 /* Profile card in horoscope */
 .profile-card{display:flex;gap:16px;align-items:center;text-align:left;width:100%}
-.profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--elev);display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;border:2px solid var(--purple);overflow:hidden}
-.profile-avatar img{width:100%;height:100%;object-fit:cover}
+/* profile-avatar styles are below with zodiac-3d */
 .profile-info{flex:1;min-width:0}
 .profile-name{font-size:1.15rem;color:var(--neon);font-weight:500;margin-bottom:2px}
 .profile-birth{font-size:0.85rem;color:var(--txt2);margin-bottom:4px}
 .profile-zodiac{display:flex;align-items:center;gap:8px;font-size:0.95rem}
-/* Animated zodiac SVG */
+/* Animated zodiac SVG - small inline version */
 .zodiac-anim{width:28px;height:28px;display:inline-block}
 .zodiac-anim svg{width:100%;height:100%}
 .zodiac-anim svg path,.zodiac-anim svg circle,.zodiac-anim svg line,.zodiac-anim svg polyline{stroke:#c0c0d0;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(192,192,208,0.5));animation:zodiacGlow 3s ease infinite}
 @keyframes zodiacGlow{0%,100%{stroke:#c0c0d0;filter:drop-shadow(0 0 3px rgba(192,192,208,0.4))}50%{stroke:#e8e8f0;filter:drop-shadow(0 0 6px rgba(192,192,208,0.8))}}
+/* Large zodiac sign - deep blue 3D rotation */
+.zodiac-3d{width:64px;height:64px;display:inline-block;animation:zodiacSpin3d 12s linear infinite;perspective:200px;transform-style:preserve-3d}
+.zodiac-3d svg{width:100%;height:100%}
+.zodiac-3d svg path,.zodiac-3d svg circle,.zodiac-3d svg line,.zodiac-3d svg polyline{stroke:#1a5fb4;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 6px rgba(26,95,180,0.6)) drop-shadow(0 0 12px rgba(67,97,238,0.3));animation:zodiacDeepGlow 4s ease infinite}
+@keyframes zodiacSpin3d{0%{transform:rotateY(0deg)}100%{transform:rotateY(360deg)}}
+@keyframes zodiacDeepGlow{0%,100%{stroke:#1a5fb4;filter:drop-shadow(0 0 6px rgba(26,95,180,0.5)) drop-shadow(0 0 12px rgba(67,97,238,0.2))}50%{stroke:#3584e4;filter:drop-shadow(0 0 10px rgba(53,132,228,0.7)) drop-shadow(0 0 20px rgba(67,97,238,0.4))}}
+/* Profile avatar - larger area */
+.profile-avatar{width:90px;height:90px;border-radius:50%;background:var(--elev);display:flex;align-items:center;justify-content:center;font-size:2.5rem;flex-shrink:0;border:2px solid var(--purple);overflow:hidden}
+.profile-avatar img{width:100%;height:100%;object-fit:cover}
+/* Avatar upload area */
+.avatar-upload{position:relative;width:100px;height:100px;border-radius:50%;border:2px dashed var(--purple);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0;transition:border-color 0.3s}
+.avatar-upload:hover{border-color:var(--neon)}
+.avatar-upload img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.avatar-upload-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:var(--txt2);font-size:0.7rem;text-align:center;padding:4px 0}
+.avatar-upload input[type="file"]{display:none}
+/* Like/dislike - subtle theme colors */
+.btn-feedback{background:var(--elev);color:var(--txt2);border:1px solid var(--elev);transition:all 0.2s}
+.btn-feedback:hover{border-color:var(--purple);color:var(--txt)}
+.btn-feedback.liked{border-color:var(--neon);color:var(--neon)}
+.btn-feedback.disliked{border-color:var(--txt2);color:var(--txt2)}
+/* Profile edit mode */
+.profile-field-ro{padding:11px;background:transparent;border:1px solid transparent;border-radius:12px;color:var(--txt);font-size:1rem;margin-bottom:10px;width:100%}
+.profile-hint{color:var(--txt2);font-size:0.82rem;margin-bottom:12px;font-style:italic}
+/* Interests modal */
+.interests-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center}
+.interests-modal.open{display:flex}
+.interests-modal-content{background:var(--card);border-radius:16px;padding:20px;max-width:480px;width:90%;max-height:70vh;overflow-y:auto}
 </style>
 </head>
 <body>
@@ -193,14 +219,14 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   <div class="card">
     <div class="profile-card">
       <div class="profile-avatar" id="user-avatar">&#128100;</div>
-      <div class="profile-info">
+      <div class="profile-info" style="margin-left:8px;">
         <div class="profile-name" id="user-greeting"></div>
         <div class="profile-birth" id="z-date"></div>
         <div class="profile-zodiac">
-          <span class="zodiac-anim" id="z-anim"></span>
+          <span class="zodiac-3d" id="z-anim"></span>
           <span id="z-name"></span>
         </div>
-        <span id="z-badge" class="badge badge-free mt16" style="margin-top:6px;"></span>
+        <span id="z-badge" class="badge badge-free" style="margin-top:6px;"></span>
       </div>
     </div>
   </div>
@@ -218,8 +244,8 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
       <div class="horo-text" id="res-text"></div>
     </div>
     <div class="flex">
-      <button class="btn btn-ok flex1 btn-sm" id="btn-like" onclick="feedback('like')">&#128077; Нравится</button>
-      <button class="btn btn-err flex1 btn-sm" id="btn-dislike" onclick="feedback('dislike')">&#128078; Не нравится</button>
+      <button class="btn btn-feedback flex1 btn-sm" id="btn-like" onclick="feedback('like')">&#128077; Нравится</button>
+      <button class="btn btn-feedback flex1 btn-sm" id="btn-dislike" onclick="feedback('dislike')">&#128078; Не нравится</button>
     </div>
   </div>
 
@@ -236,14 +262,14 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 
 <!-- HISTORY -->
 <div id="screen-history" class="screen">
-  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
   <h1 class="mb16">&#128220; Предыдущие гороскопы</h1>
   <div id="hist-list"></div>
 </div>
 
 <!-- FAMILY -->
 <div id="screen-family" class="screen">
-  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
   <h1 class="mb16">&#128106; Семья</h1>
   <div id="fam-list"></div>
   <div id="fam-add" style="display:none;">
@@ -267,40 +293,71 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 
 <!-- PROFILE -->
 <div id="screen-profile" class="screen">
-  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
-  <h1 class="mb16">&#128100; Профиль</h1>
-  <div class="card center">
-    <div id="p-zodiac" style="font-size:2.5rem;"></div>
-    <div class="gold" id="p-name" style="font-size:1.1rem;"></div>
-    <div class="txt2" id="p-sign"></div>
-    <div class="txt2" id="p-birth"></div>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
+  <h1 class="mb16">Профиль</h1>
+  <div class="card" style="display:flex;gap:16px;align-items:center;">
+    <div class="avatar-upload" id="avatar-upload-area" onclick="document.getElementById('avatar-file').click()">
+      <img id="p-avatar-img" src="" style="display:none;">
+      <span id="p-avatar-placeholder" style="font-size:2.2rem;color:var(--txt2);">&#128247;</span>
+      <div class="avatar-upload-label">Загрузить</div>
+      <input type="file" id="avatar-file" accept="image/jpeg,image/png,image/webp,image/gif" onchange="uploadAvatar(this)">
+    </div>
+    <div style="flex:1;">
+      <div id="p-zodiac" style="margin-bottom:4px;"></div>
+      <div class="gold" id="p-name" style="font-size:1.1rem;"></div>
+      <div class="txt2" id="p-sign"></div>
+      <div class="txt2" id="p-birth"></div>
+    </div>
   </div>
   <div class="card">
-    <h2>&#9998; Данные</h2>
-    <label class="field">Время рождения</label>
-    <input type="text" id="ed-time" placeholder="14:30">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 style="margin-bottom:0;">Данные</h2>
+      <button class="btn btn-sec btn-sm" id="btn-edit-profile" onclick="toggleEditProfile()" style="width:auto;margin:0;">Редактировать</button>
+    </div>
+    <div class="profile-hint">Добавь чуть больше информации о себе для уточнения прогноза</div>
     <label class="field">Место рождения</label>
-    <input type="text" id="ed-place" placeholder="Москва">
+    <input type="text" id="ed-place" placeholder="Москва" disabled>
+    <label class="field">Время рождения</label>
+    <input type="text" id="ed-time" placeholder="1430" maxlength="5" disabled>
     <label class="field">Профессия</label>
-    <input type="text" id="ed-prof" placeholder="Дизайнер">
+    <input type="text" id="ed-prof" placeholder="Дизайнер" disabled>
     <label class="field">Email</label>
-    <input type="email" id="ed-email" placeholder="ivan@example.com">
-    <h2 class="mt16">Интересы</h2>
-    <div id="int-tags"></div>
-    <button class="btn btn-gold mt16" onclick="saveProfile()">Сохранить</button>
+    <input type="email" id="ed-email" placeholder="ivan@example.com" disabled>
+    <div id="profile-save-area" style="display:none;">
+      <button class="btn btn-gold mt16" onclick="saveProfile()">Сохранить</button>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h2 style="margin-bottom:0;">Интересы</h2>
+      <button class="btn btn-sec btn-sm" onclick="openInterestsModal()" style="width:auto;margin:0;">Редактировать</button>
+    </div>
+    <div id="int-tags-display"></div>
+  </div>
+</div>
+
+<!-- Interests edit modal -->
+<div class="interests-modal" id="interests-modal">
+  <div class="interests-modal-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 style="margin:0;">Выбери интересы</h2>
+      <span style="font-size:1.5rem;cursor:pointer;color:var(--txt2);" onclick="closeInterestsModal()">&times;</span>
+    </div>
+    <div id="int-tags-edit"></div>
+    <button class="btn btn-gold mt16" onclick="saveInterests()">Сохранить</button>
   </div>
 </div>
 
 <!-- SUBSCRIPTION -->
 <div id="screen-subscription" class="screen">
-  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
   <h1 class="mb16">&#11088; Подписка</h1>
   <div id="tiers-list"></div>
 </div>
 
 <!-- SETTINGS -->
 <div id="screen-settings" class="screen">
-  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
   <h1 class="mb16">&#9881; Настройки</h1>
   <div class="card">
     <div class="drawer-item" onclick="notify('Скоро!','info')">&#128276; Уведомления</div>
@@ -356,12 +413,13 @@ const zodiacSVG={
     });
   }
 
-  // Constellation: Scorpius (real star positions, shifted lower)
+  // Constellation: Scorpius (realistic proportions, centered lower-mid)
+  // Based on actual star relative positions, scaled to fit nicely
   const cPoints=[
-    {x:0.22,y:0.50},{x:0.26,y:0.48},{x:0.30,y:0.52},{x:0.35,y:0.55},
-    {x:0.40,y:0.58},{x:0.46,y:0.62},{x:0.52,y:0.66},{x:0.58,y:0.70},
-    {x:0.62,y:0.74},{x:0.66,y:0.72},{x:0.70,y:0.68},{x:0.74,y:0.65},
-    {x:0.72,y:0.60},{x:0.68,y:0.63}
+    {x:0.30,y:0.52},{x:0.33,y:0.50},{x:0.36,y:0.53},{x:0.40,y:0.55},
+    {x:0.44,y:0.56},{x:0.48,y:0.58},{x:0.52,y:0.60},{x:0.55,y:0.62},
+    {x:0.58,y:0.65},{x:0.60,y:0.63},{x:0.62,y:0.60},{x:0.64,y:0.58},
+    {x:0.63,y:0.55},{x:0.61,y:0.57}
   ];
   const cLines=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,13]];
 
@@ -384,64 +442,92 @@ const zodiacSVG={
       ctx.fillStyle='rgba(255,255,255,'+(s.a*twinkle)+')';ctx.fill();
     });
 
-    // Constellation (static, with smooth continuous glow trace)
-    // Build a continuous path of all line segments for smooth tracing
+    // Constellation: smooth continuous trace along the whole figure
+    // Calculate total path length for uniform speed
     const totalSegs=cLines.length;
-    const traceSpeed=0.00025;
-    const tracePos=(t*traceSpeed)%totalSegs;
-    const trailLen=4; // how many segments the glow trail covers
-
-    // Draw all lines very dim
+    let segLens=[], totalLen=0;
     cLines.forEach(([a,b])=>{
-      ctx.strokeStyle='rgba(167,139,250,0.12)';ctx.lineWidth=0.8;
+      const dx=(cPoints[b].x-cPoints[a].x)*w, dy=(cPoints[b].y-cPoints[a].y)*h;
+      const l=Math.sqrt(dx*dx+dy*dy);
+      segLens.push(l); totalLen+=l;
+    });
+
+    const traceSpeed=0.00004; // pixels per ms effectively
+    const traceProgress=(t*traceSpeed*totalLen)%totalLen; // position along total path in pixels
+    const trailPixels=totalLen*0.35; // trail covers 35% of the path
+
+    // Draw all lines very dim (base constellation)
+    cLines.forEach(([a,b])=>{
+      ctx.strokeStyle='rgba(167,139,250,0.10)';ctx.lineWidth=0.7;
       ctx.beginPath();ctx.moveTo(cPoints[a].x*w,cPoints[a].y*h);
       ctx.lineTo(cPoints[b].x*w,cPoints[b].y*h);ctx.stroke();
     });
 
-    // Draw glowing trail (smooth fade over several segments)
+    // Compute where trace head is (which segment, what fraction)
+    let accum=0;
     for(let i=0;i<totalSegs;i++){
-      // Distance from trace head (wrapping)
-      let dist=tracePos-i;
-      if(dist<0)dist+=totalSegs;
-      if(dist>trailLen)continue;
-
       const [a,b]=cLines[i];
-      const brightness=Math.max(0,(trailLen-dist)/trailLen);
-      const alpha=brightness*0.55;
+      const segStart=accum;
+      const segEnd=accum+segLens[i];
 
-      // Full segment or partial (for the head segment)
-      if(dist<1&&dist>=0){
-        // Head segment: partial draw
-        const frac=tracePos-Math.floor(tracePos);
-        const ex=cPoints[a].x+(cPoints[b].x-cPoints[a].x)*frac;
-        const ey=cPoints[a].y+(cPoints[b].y-cPoints[a].y)*frac;
-        ctx.strokeStyle='rgba(167,139,250,'+alpha+')';ctx.lineWidth=1.5;
-        ctx.beginPath();ctx.moveTo(cPoints[a].x*w,cPoints[a].y*h);
-        ctx.lineTo(ex*w,ey*h);ctx.stroke();
-      }else{
-        ctx.strokeStyle='rgba(167,139,250,'+alpha+')';ctx.lineWidth=1.5*brightness;
-        ctx.beginPath();ctx.moveTo(cPoints[a].x*w,cPoints[a].y*h);
-        ctx.lineTo(cPoints[b].x*w,cPoints[b].y*h);ctx.stroke();
-      }
+      // How far is the trail head from this segment?
+      // traceProgress is the head position along the path
+      // We need to check if any part of the trail [traceProgress-trailPixels, traceProgress] overlaps this segment [segStart, segEnd]
+      let headDist=traceProgress-segEnd; // distance from head to segment end
+      if(headDist<-totalLen/2)headDist+=totalLen; // wrap
+      if(headDist>totalLen/2)headDist-=totalLen;
+
+      let tailDist=traceProgress-trailPixels-segStart;
+      if(tailDist<-totalLen/2)tailDist+=totalLen;
+      if(tailDist>totalLen/2)tailDist-=totalLen;
+
+      // Simpler approach: check distance of segment midpoint from trace head
+      const segMid=segStart+segLens[i]/2;
+      let d=traceProgress-segMid;
+      if(d<0)d+=totalLen;
+      if(d>totalLen)d-=totalLen;
+
+      if(d>trailPixels)d=totalLen-d; // check wrap-around
+      if(d>trailPixels){accum+=segLens[i];continue;}
+
+      const brightness=Math.max(0,1-d/trailPixels);
+      const alpha=brightness*0.5;
+      const lw=0.8+brightness*1.2;
+
+      ctx.strokeStyle='rgba(167,139,250,'+alpha+')';ctx.lineWidth=lw;
+      ctx.beginPath();ctx.moveTo(cPoints[a].x*w,cPoints[a].y*h);
+      ctx.lineTo(cPoints[b].x*w,cPoints[b].y*h);ctx.stroke();
+
+      accum+=segLens[i];
     }
 
-    // Draw star points with proximity-based glow
+    // Draw stars with smooth proximity glow based on path distance
+    accum=0;
+    let starPathPos=[];
+    // Map each star to its path position (first occurrence)
+    let starPosMap=new Map();
+    for(let i=0;i<totalSegs;i++){
+      const [a,b]=cLines[i];
+      if(!starPosMap.has(a))starPosMap.set(a,accum);
+      if(!starPosMap.has(b))starPosMap.set(b,accum+segLens[i]);
+      accum+=segLens[i];
+    }
+
     cPoints.forEach((p,i)=>{
-      // Find closest line to trace head
-      let minDist=totalSegs;
-      cLines.forEach(([a,b],li)=>{
-        if(a===i||b===i){
-          let d=tracePos-li;if(d<0)d+=totalSegs;
-          if(d<minDist)minDist=d;
-        }
-      });
-      const glow=minDist<trailLen?0.3+0.5*Math.max(0,(trailLen-minDist)/trailLen):0.25;
-      const sz=minDist<2?2.5:1.8;
+      const spos=starPosMap.get(i)||0;
+      let d=traceProgress-spos;
+      if(d<0)d+=totalLen;
+      if(d>totalLen/2)d=totalLen-d;
+
+      const proximity=Math.max(0,1-d/(trailPixels*0.6));
+      const glow=0.2+proximity*0.6;
+      const sz=1.5+proximity*1.5;
+
       ctx.beginPath();ctx.arc(p.x*w,p.y*h,sz,0,Math.PI*2);
       ctx.fillStyle='rgba(167,139,250,'+glow+')';ctx.fill();
-      if(glow>0.4){
-        ctx.beginPath();ctx.arc(p.x*w,p.y*h,sz+5,0,Math.PI*2);
-        ctx.fillStyle='rgba(167,139,250,'+(glow*0.12)+')';ctx.fill();
+      if(proximity>0.3){
+        ctx.beginPath();ctx.arc(p.x*w,p.y*h,sz+4+proximity*4,0,Math.PI*2);
+        ctx.fillStyle='rgba(167,139,250,'+(proximity*0.1)+')';ctx.fill();
       }
     });
 
@@ -577,6 +663,15 @@ function getTierBadge(tier){
   return map[tier]||map['free'];
 }
 
+function formatBirthTime(val){
+  if(!val)return '';
+  // Handle HH:MM:SS -> HH:MM
+  if(typeof val==='string'&&val.match(/^\d{1,2}:\d{2}(:\d{2})?$/)){
+    return val.split(':').slice(0,2).join(':');
+  }
+  return val;
+}
+
 async function loadMain(){
   if(!profile)await loadProfile();
   const sign=profile.zodiac_sign;
@@ -584,6 +679,14 @@ async function loadMain(){
   document.getElementById('user-greeting').textContent=profile.name||'Пользователь';
   document.getElementById('z-name').textContent=sign;
   document.getElementById('z-date').textContent=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+
+  // Avatar
+  const avatarEl=document.getElementById('user-avatar');
+  if(profile.avatar_url){
+    avatarEl.innerHTML='<img src="'+profile.avatar_url+'" alt="avatar">';
+  }else{
+    avatarEl.innerHTML='&#128100;';
+  }
 
   // Tier badge
   const [tierLabel,tierClass]=getTierBadge(profile.subscription_tier);
@@ -677,6 +780,8 @@ async function feedback(t){
   try{
     await api('/horoscope/'+curHoroId+'/feedback','POST',{feedback:t});
     document.getElementById('btn-like').disabled=true;document.getElementById('btn-dislike').disabled=true;
+    if(t==='like')document.getElementById('btn-like').classList.add('liked');
+    else document.getElementById('btn-dislike').classList.add('disliked');
     notify(t==='like'?'Спасибо за отзыв!':'Учтем, спасибо!','success');
   }catch(e){notify(e.message,'error');}
 }
@@ -730,27 +835,132 @@ async function loadProfile(){
   profile=await api('/profile/me');
   try{const o=await api('/profile/options');catalog=o.interests||[];}catch(e){}
 }
+let profileEditMode=false;
+
 function loadProfileScreen(){
   if(!profile)return;
-  document.getElementById('p-zodiac').innerHTML=zodiacSVG[profile.zodiac_sign]?'<span class="zodiac-anim" style="width:48px;height:48px;display:inline-block;">'+zodiacSVG[profile.zodiac_sign]+'</span>':'';
+  profileEditMode=false;
+
+  // Avatar
+  const avatarImg=document.getElementById('p-avatar-img');
+  const avatarPlaceholder=document.getElementById('p-avatar-placeholder');
+  if(profile.avatar_url){
+    avatarImg.src=profile.avatar_url;avatarImg.style.display='block';avatarPlaceholder.style.display='none';
+  }else{
+    avatarImg.style.display='none';avatarPlaceholder.style.display='block';
+  }
+
+  // Zodiac sign - large 3D rotating
+  document.getElementById('p-zodiac').innerHTML=zodiacSVG[profile.zodiac_sign]?'<span class="zodiac-3d">'+zodiacSVG[profile.zodiac_sign]+'</span>':'';
   document.getElementById('p-name').textContent=profile.name;
   document.getElementById('p-sign').textContent=profile.zodiac_sign;
   document.getElementById('p-birth').textContent=profile.birth_date;
-  document.getElementById('ed-time').value=profile.birth_time||'';
+
+  // Fields - read-only by default
+  document.getElementById('ed-time').value=formatBirthTime(profile.birth_time)||'';
   document.getElementById('ed-place').value=profile.birth_place||'';
   document.getElementById('ed-prof').value=profile.profession||'';
   document.getElementById('ed-email').value=profile.email||'';
-  document.getElementById('int-tags').innerHTML=catalog.map(i=>{
-    const s=(profile.interests||[]).includes(i.id)?'sel':'';
+  setProfileFieldsDisabled(true);
+
+  // Interests - show only selected
+  const selected=(profile.interests||[]);
+  const selectedItems=catalog.filter(i=>selected.includes(i.id));
+  if(selectedItems.length){
+    document.getElementById('int-tags-display').innerHTML=selectedItems.map(i=>'<span class="tag sel">'+(i.icon||'')+' '+i.label_ru+'</span>').join('');
+  }else{
+    document.getElementById('int-tags-display').innerHTML='<span class="txt2">Интересы не выбраны</span>';
+  }
+}
+
+function setProfileFieldsDisabled(disabled){
+  ['ed-time','ed-place','ed-prof','ed-email'].forEach(id=>{
+    document.getElementById(id).disabled=disabled;
+  });
+  document.getElementById('profile-save-area').style.display=disabled?'none':'block';
+  document.getElementById('btn-edit-profile').textContent=disabled?'Редактировать':'Отмена';
+}
+
+function toggleEditProfile(){
+  profileEditMode=!profileEditMode;
+  setProfileFieldsDisabled(!profileEditMode);
+}
+
+// Birth time auto-format: 1430 -> 14:30
+document.addEventListener('input',function(e){
+  if(e.target.id==='ed-time'){
+    let v=e.target.value.replace(/[^0-9]/g,'');
+    if(v.length>4)v=v.slice(0,4);
+    if(v.length>=3){
+      v=v.slice(0,v.length-2)+':'+v.slice(v.length-2);
+    }
+    e.target.value=v;
+  }
+});
+
+async function uploadAvatar(input){
+  if(!input.files||!input.files[0])return;
+  const file=input.files[0];
+  if(file.size>1024*1024){notify('Файл слишком большой (макс. 1 МБ)','error');return;}
+  const allowed=['image/jpeg','image/png','image/webp','image/gif'];
+  if(!allowed.includes(file.type)){notify('Допустимы только JPEG, PNG, WebP, GIF','error');return;}
+  const fd=new FormData();fd.append('file',file);
+  try{
+    const r=await fetch(API+'/profile/me/avatar',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Ошибка загрузки');}
+    const d=await r.json();
+    profile.avatar_url=d.avatar_url;
+    document.getElementById('p-avatar-img').src=d.avatar_url;
+    document.getElementById('p-avatar-img').style.display='block';
+    document.getElementById('p-avatar-placeholder').style.display='none';
+    notify('Аватар обновлен!','success');
+  }catch(e){notify(e.message,'error');}
+}
+
+function openInterestsModal(){
+  const selected=(profile.interests||[]);
+  // Sort: selected first, then the rest
+  const sorted=[...catalog].sort((a,b)=>{
+    const aS=selected.includes(a.id)?0:1;
+    const bS=selected.includes(b.id)?0:1;
+    return aS-bS;
+  });
+  document.getElementById('int-tags-edit').innerHTML=sorted.map(i=>{
+    const s=selected.includes(i.id)?'sel':'';
     return '<span class="tag '+s+'" data-id="'+i.id+'" onclick="this.classList.toggle(\'sel\')">'+(i.icon||'')+' '+i.label_ru+'</span>';
   }).join('');
+  document.getElementById('interests-modal').classList.add('open');
 }
+
+function closeInterestsModal(){
+  document.getElementById('interests-modal').classList.remove('open');
+}
+
+async function saveInterests(){
+  const ints=Array.from(document.querySelectorAll('#int-tags-edit .sel')).map(t=>t.dataset.id);
+  try{
+    profile=await api('/profile/me','PATCH',{interests:ints});
+    notify('Интересы сохранены!','success');
+    closeInterestsModal();
+    loadProfileScreen();
+  }catch(e){notify(e.message,'error');}
+}
+
 async function saveProfile(){
-  const ints=Array.from(document.querySelectorAll('#int-tags .sel')).map(t=>t.dataset.id);
-  const b={interests:ints};
+  const b={};
   const v=id=>document.getElementById(id).value.trim();
-  if(v('ed-time'))b.birth_time=v('ed-time');if(v('ed-place'))b.birth_place=v('ed-place');
-  if(v('ed-prof'))b.profession=v('ed-prof');if(v('ed-email'))b.email=v('ed-email');
+  const timeVal=v('ed-time');
+  if(timeVal){
+    // Auto-format: ensure HH:MM
+    let formatted=timeVal.replace(/[^0-9:]/g,'');
+    if(formatted.match(/^\d{3,4}$/)&&!formatted.includes(':')){
+      formatted=formatted.slice(0,formatted.length-2)+':'+formatted.slice(formatted.length-2);
+    }
+    b.birth_time=formatted;
+  }
+  if(v('ed-place'))b.birth_place=v('ed-place');
+  if(v('ed-prof'))b.profession=v('ed-prof');
+  if(v('ed-email'))b.email=v('ed-email');
   try{profile=await api('/profile/me','PATCH',b);notify('Профиль сохранен!','success');loadProfileScreen();}catch(e){notify(e.message,'error');}
 }
 

@@ -2,7 +2,7 @@ from datetime import date, datetime, time
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 
 from app.models.user import InterestCategory, Gender, FamilyRelation
 
@@ -73,6 +73,13 @@ class UserProfile(BaseModel):
     profile_completeness: int
     created_at: datetime
 
+    @field_serializer("birth_time")
+    @classmethod
+    def serialize_birth_time(cls, v: Optional[time]) -> Optional[str]:
+        if v is None:
+            return None
+        return v.strftime("%H:%M")
+
 
 class UserProfileUpdate(BaseModel):
     """Request to update user profile. Only predefined values accepted."""
@@ -120,3 +127,10 @@ class FamilyMemberResponse(BaseModel):
     zodiac_sign: str
     interests: list[str] = []
     created_at: datetime
+
+    @field_serializer("birth_time")
+    @classmethod
+    def serialize_birth_time(cls, v: Optional[time]) -> Optional[str]:
+        if v is None:
+            return None
+        return v.strftime("%H:%M")

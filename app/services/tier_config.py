@@ -61,7 +61,7 @@ FREE_TIER = TierConfig(
     regeneration_limit=0,    # No regeneration
     ads_required=True,
     focus_sphere_enabled=False,
-    family_members_limit=0,
+    family_members_limit=settings.FAMILY_MEMBERS_LIMIT_FREE,
 )
 
 PLUS_TIER = TierConfig(
@@ -95,7 +95,7 @@ PREMIUM_TIER = TierConfig(
     regeneration_limit=3,    # 1 per person (self + family)
     ads_required=False,
     focus_sphere_enabled=True,
-    family_members_limit=5,
+    family_members_limit=settings.FAMILY_MEMBERS_LIMIT_PREMIUM,
     compatibility_enabled=True,  # Post-MVP
 )
 

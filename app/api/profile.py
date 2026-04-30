@@ -4,10 +4,13 @@ PII is encrypted in DB and decrypted only when returning to the authenticated us
 Interests are selected from a predefined list only - no free text input.
 """
 
+import os
 import re
+import uuid as uuid_mod
 from datetime import date, time
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
@@ -232,14 +235,14 @@ async def add_family_member(
     current_count = len(current_user.family_members) if current_user.family_members else 0
 
     if current_count >= limit:
-        if not current_user.is_premium:
+        if limit == 0:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Family members available only for premium subscribers",
+                detail="Family members available only for paid subscribers",
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Maximum {limit} family members allowed",
+            detail=f"Maximum {limit} family members allowed for your subscription tier",
         )
 
     # Validate enums
@@ -307,6 +310,71 @@ async def delete_family_member(
         raise HTTPException(status_code=404, detail="Family member not found")
     await db.delete(member)
     await db.flush()
+
+
+# --- Avatar Upload ---
+
+AVATAR_UPLOAD_DIR = Path("/app/uploads/avatars")
+AVATAR_MAX_SIZE = 1 * 1024 * 1024  # 1 MB
+AVATAR_ALLOWED_MIMES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+AVATAR_ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
+@router.post("/me/avatar")
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Upload user avatar image.
+
+    Validates:
+    - File extension (jpg, png, webp, gif)
+    - MIME type (image/jpeg, image/png, image/webp, image/gif)
+    - File size (max 1 MB)
+    """
+    # Validate MIME type
+    if file.content_type not in AVATAR_ALLOWED_MIMES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file type: {file.content_type}. Allowed: JPEG, PNG, WebP, GIF",
+        )
+
+    # Validate extension
+    ext = Path(file.filename).suffix.lower() if file.filename else ""
+    if ext not in AVATAR_ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file extension: {ext}. Allowed: {', '.join(AVATAR_ALLOWED_EXTENSIONS)}",
+        )
+
+    # Read and validate size
+    contents = await file.read()
+    if len(contents) > AVATAR_MAX_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large: {len(contents)} bytes. Maximum: {AVATAR_MAX_SIZE} bytes (1 MB)",
+        )
+
+    if len(contents) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empty file",
+        )
+
+    # Save file
+    AVATAR_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{current_user.id}{ext}"
+    filepath = AVATAR_UPLOAD_DIR / filename
+    with open(filepath, "wb") as f:
+        f.write(contents)
+
+    # Update user avatar URL
+    avatar_url = f"/uploads/avatars/{filename}"
+    current_user.avatar_url = avatar_url
+    await db.flush()
+
+    return {"avatar_url": avatar_url}
 
 
 # --- Subscription Tiers ---
