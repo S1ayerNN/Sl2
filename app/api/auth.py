@@ -83,14 +83,14 @@ async def refresh_token(
 # --- Dev/Test Login (only available when DEBUG=true) ---
 
 
+from pydantic import BaseModel
+
+
 class DevLoginRequest(BaseModel):
     """Quick login for development/testing. Creates a test user if needed."""
     name: str = "Test User"
     birth_date: str = "1995-03-15"
     gender: str = "male"
-
-
-from pydantic import BaseModel
 
 
 @router.post("/dev-login", response_model=TokenResponse)
