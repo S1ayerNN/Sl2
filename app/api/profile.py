@@ -102,6 +102,17 @@ async def update_my_profile(
             )
         current_user.name_encrypted = encrypt_pii(name)
 
+    if update_data.birth_date is not None:
+        try:
+            new_birth_date = date.fromisoformat(update_data.birth_date)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid date format. Use YYYY-MM-DD",
+            )
+        current_user.birth_date = new_birth_date
+        current_user.zodiac_sign = get_zodiac_sign(new_birth_date)
+
     if update_data.birth_time is not None:
         if not re.match(r'^\d{1,2}:\d{2}$', update_data.birth_time):
             raise HTTPException(

@@ -84,6 +84,7 @@ class UserProfile(BaseModel):
 class UserProfileUpdate(BaseModel):
     """Request to update user profile. Only predefined values accepted."""
     name: Optional[str] = None
+    birth_date: Optional[str] = None  # YYYY-MM-DD format
     birth_time: Optional[str] = None  # HH:MM format
     birth_place: Optional[str] = None
     email: Optional[str] = None

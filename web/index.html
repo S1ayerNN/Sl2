@@ -23,7 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .drawer{position:fixed;top:0;right:-280px;width:280px;height:100%;background:var(--card);z-index:201;transition:right 0.3s;padding:20px;padding-top:60px;overflow-y:auto}
 .drawer.open{right:0}
 .drawer-close{position:absolute;top:16px;right:16px;font-size:1.5rem;cursor:pointer;color:var(--txt2)}
-.drawer-item{padding:12px 0;border-bottom:1px solid var(--elev);cursor:pointer;display:flex;align-items:center;gap:10px}
+.drawer-item{padding:12px 0;border-bottom:1px solid var(--elev);cursor:pointer;display:flex;align-items:center;gap:10px;font-size:0.95rem}
 .drawer-item:hover{color:var(--neon)}
 .drawer-item.active{color:var(--neon)}
 .drawer-section{color:var(--txt2);font-size:0.8rem;text-transform:uppercase;margin-top:16px;margin-bottom:4px;letter-spacing:1px}
@@ -146,16 +146,16 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <div class="drawer" id="drawer">
   <span class="drawer-close" onclick="toggleDrawer()">&times;</span>
   <div class="drawer-section">Разделы</div>
-  <div class="drawer-item active" data-section="horoscope" onclick="showSection('horoscope')">&#128302; Гороскоп</div>
-  <div class="drawer-item" data-section="history" onclick="showSection('history')">&#128220; Предыдущие гороскопы</div>
-  <div class="drawer-item" data-section="family" onclick="showSection('family')">&#128106; Семья</div>
+  <div class="drawer-item active" data-section="horoscope" onclick="showSection('horoscope')"><span style="width:24px;display:inline-block;text-align:center;">&#128302;</span> Гороскоп</div>
+  <div class="drawer-item" data-section="history" onclick="showSection('history')"><span style="width:24px;display:inline-block;text-align:center;">&#128220;</span> Предыдущие</div>
+  <div class="drawer-item" data-section="family" onclick="showSection('family')"><span style="width:24px;display:inline-block;text-align:center;">&#128587;</span> Семья</div>
   <div class="drawer-section">Будущие разделы</div>
-  <div class="drawer-item txt2">&#127183; Таро (скоро)</div>
-  <div class="drawer-item txt2">&#128722; Магазин (скоро)</div>
+  <div class="drawer-item txt2"><span style="width:24px;display:inline-block;text-align:center;">&#127183;</span> Таро (скоро)</div>
+  <div class="drawer-item txt2"><span style="width:24px;display:inline-block;text-align:center;">&#128722;</span> Магазин (скоро)</div>
   <div class="drawer-section">Настройки</div>
-  <div class="drawer-item" data-section="profile" onclick="showSection('profile')">&#128100; Профиль и данные</div>
-  <div class="drawer-item" data-section="subscription" onclick="showSection('subscription')">&#11088; Подписка</div>
-  <div class="drawer-item" data-section="settings" onclick="showSection('settings')">&#9881; Настройки</div>
+  <div class="drawer-item" data-section="profile" onclick="showSection('profile')"><span style="width:24px;display:inline-block;text-align:center;">&#128100;</span> Профиль</div>
+  <div class="drawer-item" data-section="subscription" onclick="showSection('subscription')"><span style="width:24px;display:inline-block;text-align:center;">&#11088;</span> Подписка</div>
+  <div class="drawer-item" data-section="settings" onclick="showSection('settings')"><span style="width:24px;display:inline-block;text-align:center;">&#9881;</span> Настройки</div>
   <div style="margin-top:30px;">
     <button class="btn btn-sec" onclick="logout()" style="font-size:0.9rem;">Выйти</button>
   </div>
@@ -1078,6 +1078,8 @@ async function saveProfile(){
     if(!email.match(/^[^@]+@[^@]+\.[^@]+$/)){notify('Некорректный email','error');return;}
     b.email=email;
   }
+  const birthDate=v('ed-birthdate');
+  if(birthDate)b.birth_date=birthDate;
   const timeVal=v('ed-time');
   if(timeVal){
     let formatted=timeVal.replace(/[^0-9:]/g,'');
@@ -1086,7 +1088,11 @@ async function saveProfile(){
     }
     b.birth_time=formatted;
   }
-  try{profile=await api('/profile/me','PATCH',b);notify('Профиль сохранен!','success');loadProfileScreen();}catch(e){notify(e.message,'error');}
+  try{
+    profile=await api('/profile/me','PATCH',b);
+    notify('Профиль сохранен!','success');
+    loadProfileScreen();
+  }catch(e){notify(e.message,'error');}
 }
 
 // Tiers
