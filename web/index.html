@@ -134,7 +134,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 
 <!-- Top Bar -->
 <div class="topbar">
-  <div class="topbar-title">MYASTRO</div>
+  <div class="topbar-title">MY.ASTRO</div>
   <div class="topbar-icons">
     <span class="topbar-icon" id="tier-icon" onclick="showSection('subscription')">&#11088;</span>
     <span class="topbar-icon" onclick="toggleDrawer()">&#9776;</span>
@@ -167,7 +167,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <!-- AUTH -->
 <div id="screen-auth" class="screen active" style="padding-top:0;">
   <div class="starry-bg"><canvas id="starCanvas"></canvas></div>
-  <div class="auth-content center" style="padding-top:55vh;">
+  <div class="auth-content center" style="padding-top:42vh;">
     <div class="landing-title">MY.ASTRO</div>
     <div class="txt2 mb16" style="font-size:0.95rem;margin-top:8px;">Твой персональный астролог каждый день рядом</div>
     <div style="margin-top:40px;">
@@ -312,8 +312,8 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <div id="screen-profile" class="screen">
   <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
   <h1 class="mb16">Профиль</h1>
-  <div class="card center">
-    <div class="avatar-upload" id="avatar-upload-area" onclick="document.getElementById('avatar-file').click()" style="margin:0 auto 12px;">
+  <div class="card" style="display:flex;align-items:center;gap:16px;">
+    <div class="avatar-upload" id="avatar-upload-area" onclick="document.getElementById('avatar-file').click()">
       <div class="avatar-inner">
         <img id="p-avatar-img" src="" style="display:none;">
         <span id="p-avatar-placeholder" style="font-size:2.2rem;color:var(--txt2);">&#128247;</span>
@@ -324,17 +324,19 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
       </div>
       <input type="file" id="avatar-file" accept="image/jpeg,image/png,image/webp,image/gif" onchange="uploadAvatar(this)">
     </div>
-    <div id="p-zodiac"></div>
-    <div class="txt2" id="p-sign"></div>
+    <div style="flex:1;text-align:center;">
+      <div id="p-zodiac"></div>
+      <div class="txt2" id="p-sign"></div>
+    </div>
   </div>
   <div class="card">
     <div class="profile-hint" style="margin-bottom:12px;">Добавь чуть больше информации о себе для уточнения прогноза</div>
-    <div class="field-row"><span class="field-label">Имя</span><input type="text" id="ed-name" placeholder="Имя" disabled></div>
-    <div class="field-row"><span class="field-label">Дата рождения</span><input type="date" id="ed-birthdate" disabled></div>
-    <div class="field-row"><span class="field-label">Место рождения</span><input type="text" id="ed-place" placeholder="Москва" disabled></div>
+    <div class="field-row"><span class="field-label">Имя</span><input type="text" id="ed-name" placeholder="Имя" maxlength="50" disabled></div>
+    <div class="field-row"><span class="field-label">Дата рождения</span><input type="date" id="ed-birthdate" min="1920-01-01" max="2020-12-31" disabled></div>
+    <div class="field-row"><span class="field-label">Место рождения</span><input type="text" id="ed-place" placeholder="Москва" maxlength="50" disabled></div>
     <div class="field-row"><span class="field-label">Время рождения</span><input type="text" id="ed-time" placeholder="1430" maxlength="5" disabled></div>
-    <div class="field-row"><span class="field-label">Профессия</span><input type="text" id="ed-prof" placeholder="Дизайнер" disabled></div>
-    <div class="field-row"><span class="field-label">Email</span><input type="email" id="ed-email" placeholder="ivan@example.com" disabled></div>
+    <div class="field-row"><span class="field-label">Профессия</span><input type="text" id="ed-prof" placeholder="Дизайнер" maxlength="50" disabled></div>
+    <div class="field-row"><span class="field-label">Email</span><input type="email" id="ed-email" placeholder="ivan@example.com" maxlength="50" disabled></div>
     <span id="btn-edit-profile" onclick="toggleEditProfile()" style="cursor:pointer;font-size:0.82rem;color:var(--neon);display:inline-block;margin-top:8px;">&#9998; Изменить</span>
     <div id="profile-save-area" style="display:none;">
       <button class="btn btn-gold mt16" onclick="saveProfile()">Сохранить</button>
@@ -401,6 +403,13 @@ const zodiacSVG={
   'Рыбы':'<svg viewBox="0 0 40 40"><path d="M6 20 C12 10 18 10 18 20 C18 30 12 30 6 20" fill="none"/><path d="M34 20 C28 10 22 10 22 20 C22 30 28 30 34 20" fill="none"/><line x1="4" y1="20" x2="36" y2="20"/></svg>'
 };
 
+// Zodiac emoji for default avatars
+const zodiacEmoji={
+  'Овен':'♈','Телец':'♉','Близнецы':'♊','Рак':'♋',
+  'Лев':'♌','Дева':'♍','Весы':'♎','Скорпион':'♏',
+  'Стрелец':'♐','Козерог':'♑','Водолей':'♒','Рыбы':'♓'
+};
+
 // ===== Starry Sky with drift =====
 (function initStars(){
   const canvas=document.getElementById('starCanvas');
@@ -426,33 +435,25 @@ const zodiacSVG={
   // Zodiac figure constellations - stars form the shape of the zodiac sign
   // Each figure: points (star positions) + lines (connections) + outline (faint figure shape)
   const zodiacFigures = {
-    // Virgo - maiden figure, centered in upper screen area (y: 0.10-0.42)
-    virgo: {
+    // Orion - real astronomical constellation (scaled 75%, upper area)
+    orion: {
       stars: [
-        {x:0.45,y:0.12},{x:0.48,y:0.10},{x:0.51,y:0.12}, // head
-        {x:0.48,y:0.16},{x:0.46,y:0.22},{x:0.50,y:0.22}, // torso
-        {x:0.44,y:0.28},{x:0.52,y:0.28}, // hips
-        {x:0.42,y:0.35},{x:0.54,y:0.35}, // knees
-        {x:0.41,y:0.40},{x:0.55,y:0.40}, // feet
-        {x:0.56,y:0.18},{x:0.59,y:0.15},{x:0.57,y:0.12}, // arm+wheat
-        {x:0.42,y:0.18},{x:0.39,y:0.15}, // left arm
+        {x:0.44,y:0.06},{x:0.46,y:0.05},{x:0.48,y:0.06}, // head (lambda, phi1, phi2)
+        {x:0.41,y:0.11},{x:0.51,y:0.10}, // shoulders (Betelgeuse, Bellatrix)
+        {x:0.44,y:0.15},{x:0.46,y:0.15},{x:0.48,y:0.15}, // belt (Alnitak, Alnilam, Mintaka)
+        {x:0.42,y:0.21},{x:0.50,y:0.20}, // knees (Saiph, Rigel)
+        {x:0.37,y:0.08},{x:0.54,y:0.07}, // arm tips
       ],
-      lines: [[0,1],[1,2],[0,3],[2,3],[3,4],[3,5],[4,6],[5,7],[6,8],[7,9],[8,10],[9,11],[5,12],[12,13],[13,14],[4,15],[15,16]],
+      lines: [[0,1],[1,2],[0,3],[2,4],[3,5],[4,7],[5,6],[6,7],[5,8],[7,9],[3,10],[4,11]],
       brightness: []
     },
-    // Sagittarius - centaur archer, centered in upper screen area (y: 0.08-0.42)
-    sagittarius: {
+    // Cassiopeia - W shape (real constellation, scaled 75%, upper area)
+    cassiopeia: {
       stars: [
-        {x:0.47,y:0.10},{x:0.49,y:0.12},{x:0.45,y:0.12}, // head/bow top
-        {x:0.51,y:0.16},{x:0.43,y:0.16}, // shoulders
-        {x:0.47,y:0.21}, // center torso
-        {x:0.55,y:0.14},{x:0.59,y:0.12},{x:0.61,y:0.08}, // arrow
-        {x:0.42,y:0.26},{x:0.53,y:0.26}, // horse body
-        {x:0.38,y:0.31},{x:0.57,y:0.31}, // horse mid
-        {x:0.36,y:0.37},{x:0.40,y:0.37},{x:0.55,y:0.37},{x:0.59,y:0.37}, // legs
-        {x:0.35,y:0.42},{x:0.41,y:0.42},{x:0.54,y:0.42},{x:0.60,y:0.42}, // hooves
+        {x:0.40,y:0.10},{x:0.44,y:0.06},{x:0.48,y:0.12},
+        {x:0.52,y:0.07},{x:0.56,y:0.11},
       ],
-      lines: [[0,1],[0,2],[1,3],[2,4],[3,5],[4,5],[3,6],[6,7],[7,8],[5,9],[5,10],[9,11],[10,12],[11,13],[11,14],[12,15],[12,16],[13,17],[14,18],[15,19],[16,20]],
+      lines: [[0,1],[1,2],[2,3],[3,4]],
       brightness: []
     }
   };
@@ -464,7 +465,7 @@ const zodiacSVG={
     });
   });
 
-  const figureNames = ['virgo','sagittarius'];
+  const figureNames = ['orion','cassiopeia'];
   let currentFigIdx = 0;
   let figureAlpha = 1; // 0..1 opacity for current figure
   let lastSwitch = 0;
@@ -684,12 +685,12 @@ async function loadMain(){
   document.getElementById('z-name').textContent=sign;
   document.getElementById('z-date').textContent=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
 
-  // Avatar with cache busting
+  // Avatar with cache busting - show zodiac emoji if no photo
   const avatarEl=document.getElementById('user-avatar');
   if(profile.avatar_url){
     avatarEl.innerHTML='<img src="'+profile.avatar_url+'?t='+Date.now()+'" alt="avatar">';
   }else{
-    avatarEl.innerHTML='&#128100;';
+    avatarEl.innerHTML=zodiacEmoji[sign]||'&#128100;';
   }
 
   // Tier badge
@@ -1006,7 +1007,29 @@ async function saveInterests(){
 async function saveProfile(){
   const b={};
   const v=id=>document.getElementById(id).value.trim();
-  if(v('ed-name'))b.name=v('ed-name');
+  // Frontend validation
+  const name=v('ed-name');
+  if(name){
+    if(name.length<2){notify('Имя: минимум 2 символа','error');return;}
+    if(name.length>50){notify('Имя: максимум 50 символов','error');return;}
+    b.name=name;
+  }
+  const place=v('ed-place');
+  if(place){
+    if(place.length>50){notify('Город: максимум 50 символов','error');return;}
+    b.birth_place=place;
+  }
+  const prof=v('ed-prof');
+  if(prof){
+    if(prof.length>50){notify('Профессия: максимум 50 символов','error');return;}
+    b.profession=prof;
+  }
+  const email=v('ed-email');
+  if(email){
+    if(email.length>50){notify('Email: максимум 50 символов','error');return;}
+    if(!email.match(/^[^@]+@[^@]+\.[^@]+$/)){notify('Некорректный email','error');return;}
+    b.email=email;
+  }
   const timeVal=v('ed-time');
   if(timeVal){
     let formatted=timeVal.replace(/[^0-9:]/g,'');
@@ -1015,9 +1038,6 @@ async function saveProfile(){
     }
     b.birth_time=formatted;
   }
-  if(v('ed-place'))b.birth_place=v('ed-place');
-  if(v('ed-prof'))b.profession=v('ed-prof');
-  if(v('ed-email'))b.email=v('ed-email');
   try{profile=await api('/profile/me','PATCH',b);notify('Профиль сохранен!','success');loadProfileScreen();}catch(e){notify(e.message,'error');}
 }
 

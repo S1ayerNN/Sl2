@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api import ads, auth, debug, horoscope, profile
 from app.core.config import settings
@@ -59,6 +61,12 @@ app.include_router(profile.router, prefix="/api/v1")
 app.include_router(horoscope.router, prefix="/api/v1")
 app.include_router(ads.router, prefix="/api/v1")
 app.include_router(debug.router, prefix="/api/v1")
+
+
+# Serve uploaded files (avatars) - fallback if nginx can't serve them
+uploads_dir = Path("/app/uploads")
+uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
 
 @app.get("/health")
