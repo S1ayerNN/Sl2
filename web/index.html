@@ -272,6 +272,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 
   <div id="horo-area">
     <button class="btn btn-gold" id="btn-gen" onclick="genHoro()">&#128302; Получить гороскоп</button>
+    <button class="btn btn-sec mt16" id="btn-focus-open" onclick="openFocusModal()" style="display:none;">&#127919; Получить гороскоп на самое важное</button>
   </div>
 
   <div id="horo-result" style="display:none;">
@@ -289,12 +290,18 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
     <button class="btn btn-sec btn-sm mt16" id="btn-regen" onclick="genHoro('regeneration')" style="display:none;">&#128260; Другой гороскоп</button>
   </div>
 
-  <!-- Focus interest horoscope -->
-  <div class="card mt16" id="focus-sec">
-    <h2 style="font-size:0.95rem;font-weight:400;margin-bottom:8px;">&#127919; Гороскоп по интересу</h2>
-    <div id="focus-tags" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
-    <div id="focus-result" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--elev);">
-      <div class="horo-text" id="focus-text" style="font-size:0.9rem;"></div>
+  <!-- Focus result (shown after generation) -->
+  <div id="focus-result" class="card mt16" style="display:none;">
+    <div class="txt2 mb8">&#127919; Гороскоп по интересу</div>
+    <div class="horo-text" id="focus-text" style="font-size:0.9rem;"></div>
+  </div>
+
+  <!-- Focus interest modal -->
+  <div id="focus-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;display:none;align-items:center;justify-content:center;">
+    <div class="card" style="max-width:400px;width:90%;margin:auto;margin-top:30vh;">
+      <h2 style="font-size:1rem;font-weight:400;margin-bottom:12px;">Выбери тему гороскопа</h2>
+      <div id="focus-tags" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      <button class="btn btn-sec btn-sm mt16" onclick="closeFocusModal()">Отмена</button>
     </div>
   </div>
 
@@ -814,16 +821,10 @@ async function loadMain(){
   try{const t=await api('/horoscope/today');if(t)showHoro(t);}catch(e){}
   try{
     const lim=await api('/horoscope/limits');
-    // Show focus section with user's selected interests
+    // Show focus button if user has interests and horoscope exists
     const userInterests=(profile.interests||[]);
-    const userInterestItems=catalog.filter(i=>userInterests.includes(i.id));
-    if(userInterestItems.length){
-      document.getElementById('focus-sec').style.display='block';
-      document.getElementById('focus-tags').innerHTML=userInterestItems.map(i=>
-        '<button class="tag" onclick="genFocusHoro(\''+esc(i.id)+'\')" style="font-size:0.85rem;">'+(i.icon?esc(i.icon):'')+' '+esc(i.label_ru)+'</button>'
-      ).join('');
-    }else{
-      document.getElementById('focus-sec').style.display='none';
+    if(userInterests.length&&document.getElementById('horo-result').style.display==='block'){
+      document.getElementById('btn-focus-open').style.display='block';
     }
   }catch(e){}
 }
@@ -891,13 +892,25 @@ async function genHoro(type='general',focusId=null){
   btn.disabled=false;btn.innerHTML='&#128302; Получить гороскоп';
 }
 
+function openFocusModal(){
+  const userInterests=(profile.interests||[]);
+  const items=catalog.filter(i=>userInterests.includes(i.id));
+  document.getElementById('focus-tags').innerHTML=items.map(i=>
+    '<button class="tag" onclick="genFocusHoro(\''+esc(i.id)+'\')" style="font-size:0.9rem;color:var(--txt);background:var(--elev);border:1px solid var(--purple);padding:8px 14px;cursor:pointer;">'+(i.icon?esc(i.icon):'')+' '+esc(i.label_ru)+'</button>'
+  ).join('');
+  document.getElementById('focus-modal').style.display='block';
+}
+function closeFocusModal(){
+  document.getElementById('focus-modal').style.display='none';
+}
+
 async function genFocusHoro(interestId){
-  const tag=event?.target;
-  if(tag){tag.disabled=true;tag.textContent='Генерация...';}
+  closeFocusModal();
+  notify('Генерация фокусного гороскопа...','info');
   try{
     if(profile&&profile.subscription_tier==='free'){
       const adOk=await ensureAdViewed();
-      if(!adOk){if(tag){tag.disabled=false;}loadMain();return;}
+      if(!adOk)return;
     }
     const h=await api('/horoscope/generate','POST',{horoscope_type:'focused',focus_interest_id:interestId});
     if(h){
@@ -906,13 +919,6 @@ async function genFocusHoro(interestId){
     }
     notify('Фокусный гороскоп готов!','success');
   }catch(e){notify(e.message,'error');}
-  if(tag){tag.disabled=false;}
-  // Re-render tags to restore labels
-  const userInterests=(profile.interests||[]);
-  const items=catalog.filter(i=>userInterests.includes(i.id));
-  document.getElementById('focus-tags').innerHTML=items.map(i=>
-    '<button class="tag" onclick="genFocusHoro(\''+esc(i.id)+'\')" style="font-size:0.85rem;">'+(i.icon?esc(i.icon):'')+' '+esc(i.label_ru)+'</button>'
-  ).join('');
 }
 
 function showHoro(h){
@@ -926,6 +932,13 @@ function showHoro(h){
   document.getElementById('res-type').textContent=l;
   document.getElementById('horo-result').style.display='block';
   document.getElementById('btn-regen').style.display='block';
+  // Swap: hide "Получить гороскоп", show "Другой гороскоп"
+  document.getElementById('btn-gen').style.display='none';
+  document.getElementById('btn-regen').style.display='block';
+  // Show focus button if user has interests
+  if(profile&&(profile.interests||[]).length){
+    document.getElementById('btn-focus-open').style.display='block';
+  }
   document.getElementById('btn-like').disabled=!!h.feedback;
   document.getElementById('btn-dislike').disabled=!!h.feedback;
 }
