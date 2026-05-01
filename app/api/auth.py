@@ -81,53 +81,53 @@ async def refresh_token(
 
 
 # --- Dev/Test Login (only available when DEBUG=true) ---
+# S1 FIX: The route is only registered when DEBUG=true at import time.
+# Even if somehow reached, there's a runtime check as defense-in-depth.
 
+if settings.DEBUG:
+    from pydantic import BaseModel
 
-from pydantic import BaseModel
+    class DevLoginRequest(BaseModel):
+        """Quick login for development/testing. Creates a test user if needed."""
+        name: str = "Test User"
+        birth_date: str = "1995-03-15"
+        gender: str = "male"
 
+    @router.post("/dev-login", response_model=TokenResponse)
+    async def dev_login(
+        request: DevLoginRequest = DevLoginRequest(),
+        db: AsyncSession = Depends(get_db),
+    ):
+        """Development-only login. Creates/finds a test user and returns tokens.
 
-class DevLoginRequest(BaseModel):
-    """Quick login for development/testing. Creates a test user if needed."""
-    name: str = "Test User"
-    birth_date: str = "1995-03-15"
-    gender: str = "male"
+        Only available when DEBUG=true. DO NOT use in production.
+        """
+        if not settings.DEBUG:
+            raise HTTPException(status_code=403, detail="Dev login disabled")
 
+        # Use a fixed test telegram_id
+        test_telegram_id = "dev_test_user_12345"
 
-@router.post("/dev-login", response_model=TokenResponse)
-async def dev_login(
-    request: DevLoginRequest = DevLoginRequest(),
-    db: AsyncSession = Depends(get_db),
-):
-    """Development-only login. Creates/finds a test user and returns tokens.
-
-    Only available when DEBUG=true. DO NOT use in production.
-    """
-    if not settings.DEBUG:
-        raise HTTPException(status_code=403, detail="Dev login only available in DEBUG mode")
-
-    # Use a fixed test telegram_id
-    test_telegram_id = "dev_test_user_12345"
-
-    result = await db.execute(
-        select(User).where(User.telegram_id == test_telegram_id)
-    )
-    user = result.scalar_one_or_none()
-
-    if user is None:
-        birth = date.fromisoformat(request.birth_date)
-        user = User(
-            telegram_id=test_telegram_id,
-            name_encrypted=encrypt_pii(request.name),
-            birth_date=birth,
-            gender=request.gender,
-            zodiac_sign=get_zodiac_sign(birth),
-            interests=["love", "career", "health"],
+        result = await db.execute(
+            select(User).where(User.telegram_id == test_telegram_id)
         )
-        user.profile_completeness = user.calculate_completeness()
-        db.add(user)
-        await db.flush()
+        user = result.scalar_one_or_none()
 
-    return TokenResponse(
-        access_token=create_access_token(str(user.id)),
-        refresh_token=create_refresh_token(str(user.id)),
-    )
+        if user is None:
+            birth = date.fromisoformat(request.birth_date)
+            user = User(
+                telegram_id=test_telegram_id,
+                name_encrypted=encrypt_pii(request.name),
+                birth_date=birth,
+                gender=request.gender,
+                zodiac_sign=get_zodiac_sign(birth),
+                interests=["love", "career", "health"],
+            )
+            user.profile_completeness = user.calculate_completeness()
+            db.add(user)
+            await db.flush()
+
+        return TokenResponse(
+            access_token=create_access_token(str(user.id)),
+            refresh_token=create_refresh_token(str(user.id)),
+        )
