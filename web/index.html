@@ -945,18 +945,21 @@ async function loadFamily(){
           '<div id="fam-horo-'+m.id+'"></div>'+
         '</div>';
       }).join('');
-      // Load today's horoscope for each member
-      members.forEach(async(m)=>{
+      // Load today's horoscope for each member (sequentially to avoid race conditions)
+      for(const m of members){
         try{
           const h=await api('/horoscope/today?family_member_id='+m.id);
-          if(h){
+          if(h&&h.horoscope_text){
             const horoDiv=document.getElementById('fam-horo-'+m.id);
             if(horoDiv){
               horoDiv.innerHTML='<div class="horo-text" style="font-size:0.9rem;margin-top:8px;padding-top:8px;border-top:1px solid var(--elev);">'+esc(h.horoscope_text)+'</div>';
             }
+            // Change button to "Другой гороскоп"
+            const btn=document.querySelector('#fam-horo-'+m.id).parentElement.querySelector('button');
+            if(btn)btn.innerHTML='&#128302; Другой гороскоп';
           }
         }catch(e){}
-      });
+      }
     }else{
       el.innerHTML='<div class="card center txt2">Пока никто не добавлен</div>';
     }
