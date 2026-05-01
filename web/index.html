@@ -102,7 +102,11 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 .field-row input,.field-row select{flex:1;margin-bottom:0}
 /* Tooltip */
 .tooltip-wrap{position:relative;display:inline-block}
-.tooltip-wrap .tooltip-text{visibility:hidden;background:var(--elev);color:var(--txt);font-size:0.78rem;padding:8px 12px;border-radius:8px;border:1px solid var(--purple);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:normal;min-width:200px;max-width:300px;text-align:center;z-index:10;opacity:0;transition:opacity 0.2s}
+.tooltip-wrap .tooltip-text{visibility:hidden;background:var(--elev);color:var(--txt);font-size:0.78rem;padding:8px 12px;border-radius:8px;border:1px solid var(--purple);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;z-index:10;opacity:0;transition:opacity 0.2s}
+/* Confirm modal */
+.confirm-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center}
+.confirm-modal.open{display:flex}
+.confirm-modal-content{background:var(--card);border-radius:16px;padding:24px;max-width:360px;width:90%;text-align:center}
 .tooltip-wrap:hover .tooltip-text{visibility:visible;opacity:1}
 /* Avatar upload area */
 .avatar-upload{position:relative;width:100px;height:100px;border-radius:50%;border:2px dashed var(--purple);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:visible;flex-shrink:0;transition:border-color 0.3s}
@@ -234,20 +238,20 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
     <div class="profile-card">
       <div class="profile-avatar" id="user-avatar">&#128100;</div>
       <div class="profile-info" style="margin-left:12px;text-align:left;flex:1;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div>
-            <div class="profile-name" id="user-greeting"></div>
-            <div class="profile-birth txt2" id="z-date" style="font-size:0.82rem;"></div>
-          </div>
-          <div style="text-align:right;">
-            <div class="profile-zodiac" style="justify-content:flex-end;">
-              <span class="zodiac-3d" id="z-anim"></span>
-              <span id="z-name"></span>
-            </div>
-            <div class="tooltip-wrap" style="margin-top:4px;" onclick="showSection('subscription')">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="flex:1;">
+            <div class="profile-name" id="user-greeting" style="font-size:1.4rem;font-weight:500;margin-bottom:4px;"></div>
+            <div class="tooltip-wrap" onclick="showSection('subscription')">
               <span id="z-badge" class="badge badge-free" style="cursor:pointer;"></span>
               <span class="tooltip-text">Раскрой все возможности в подписке</span>
             </div>
+          </div>
+          <div style="text-align:center;flex-shrink:0;margin-left:12px;">
+            <div class="profile-zodiac" style="justify-content:center;">
+              <span class="zodiac-3d" id="z-anim"></span>
+            </div>
+            <span id="z-name" style="font-size:0.85rem;color:var(--neon);"></span>
+            <div class="txt2" id="z-date" style="font-size:0.78rem;margin-top:2px;"></div>
           </div>
         </div>
       </div>
@@ -354,6 +358,17 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   <div class="card">
     <div id="int-tags-display" style="margin-bottom:8px;"></div>
     <span onclick="openInterestsModal()" style="cursor:pointer;font-size:0.82rem;color:var(--neon);">&#9998; Изменить</span>
+  </div>
+</div>
+
+<!-- Confirm delete modal -->
+<div class="confirm-modal" id="confirm-modal">
+  <div class="confirm-modal-content">
+    <div style="font-size:1.1rem;margin-bottom:16px;">Вы действительно хотите удалить запись?</div>
+    <div class="flex">
+      <button class="btn btn-gold flex1" id="confirm-yes" onclick="">Удалить</button>
+      <button class="btn btn-sec flex1" onclick="closeConfirmModal()">Отмена</button>
+    </div>
   </div>
 </div>
 
@@ -824,7 +839,7 @@ async function loadFamily(){
         return '<div class="card">'+
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
             '<div><span class="gold" style="font-size:1.05rem;">'+m.name+'</span><span class="txt2">, '+relName+'</span></div>'+
-            '<span class="txt2" style="cursor:pointer;font-size:0.78rem;" onclick="deleteFamily(\''+m.id+'\')">&#128465;</span>'+
+            '<span style="cursor:pointer;font-size:0.85rem;color:var(--err);opacity:0.7;padding:4px 8px;border-radius:8px;background:rgba(239,71,111,0.1);" onclick="deleteFamily(\''+m.id+'\')">&#128465; Удалить</span>'+
           '</div>'+
           '<div style="display:flex;justify-content:space-between;align-items:center;">'+
             '<span class="txt2" style="font-size:0.85rem;">'+m.birth_date+' &middot; '+m.zodiac_sign+'</span>'+
@@ -879,18 +894,35 @@ async function addFamily(){
     hideAddFamily();loadFamily();notify('Член семьи добавлен!','success');
   }catch(e){notify(e.message,'error');}
 }
-async function deleteFamily(mid){
-  if(!confirm('Удалить этого члена семьи?'))return;
-  try{
-    await api('/profile/family/'+mid,'DELETE');
-    loadFamily();notify('Удалено','success');
-  }catch(e){notify(e.message,'error');}
+let pendingDeleteId=null;
+function deleteFamily(mid){
+  pendingDeleteId=mid;
+  document.getElementById('confirm-modal').classList.add('open');
+  document.getElementById('confirm-yes').onclick=async function(){
+    try{
+      await api('/profile/family/'+pendingDeleteId,'DELETE');
+      closeConfirmModal();loadFamily();notify('Удалено','success');
+    }catch(e){closeConfirmModal();notify(e.message,'error');}
+  };
+}
+function closeConfirmModal(){
+  document.getElementById('confirm-modal').classList.remove('open');
+  pendingDeleteId=null;
 }
 
 async function genHoroFor(mid){
   try{
+    // Free users need ad first
+    if(profile&&profile.subscription_tier==='free'){
+      const adOk=await ensureAdViewed();
+      if(!adOk)return;
+    }
     const h=await api('/horoscope/generate','POST',{horoscope_type:'general',family_member_id:mid});
-    if(h)notify('Гороскоп для близкого создан!','success');
+    if(h){
+      notify('Гороскоп для близкого создан!','success');
+      showSection('horoscope');
+      showHoro(h);
+    }
   }catch(e){notify(e.message,'error');}
 }
 
