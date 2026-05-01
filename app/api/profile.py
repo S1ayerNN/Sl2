@@ -22,7 +22,7 @@ from app.models.user import (
 from app.schemas.user import (
     AVAILABLE_GENDERS, AVAILABLE_RELATIONS,
     AvailableOptionsResponse, FamilyMemberCreate, FamilyMemberResponse,
-    ProfileCompletenessHint, UserProfile, UserProfileUpdate,
+    FamilyMemberUpdate, ProfileCompletenessHint, UserProfile, UserProfileUpdate,
 )
 from app.services.interest_catalog import (
     get_catalog_for_api,
@@ -100,18 +100,22 @@ async def update_my_profile(
         current_user.name_encrypted = encrypt_pii(name)
 
     if update_data.birth_time is not None:
-        if not re.match(r'^\d{1,2}:\d{2}$', update_data.birth_time):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid time format. Use HH:MM",
-            )
-        h, m = map(int, update_data.birth_time.split(":"))
-        if not (0 <= h <= 23 and 0 <= m <= 59):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid time. Hours 0-23, minutes 0-59",
-            )
-        current_user.birth_time = time(h, m)
+        # Q2 FIX: Allow empty string to clear birth_time
+        if update_data.birth_time.strip() == "":
+            current_user.birth_time = None
+        else:
+            if not re.match(r'^\d{1,2}:\d{2}$', update_data.birth_time):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid time format. Use HH:MM or empty string to clear",
+                )
+            h, m = map(int, update_data.birth_time.split(":"))
+            if not (0 <= h <= 23 and 0 <= m <= 59):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid time. Hours 0-23, minutes 0-59",
+                )
+            current_user.birth_time = time(h, m)
 
     if update_data.birth_place is not None:
         place = update_data.birth_place.strip()
@@ -120,17 +124,21 @@ async def update_my_profile(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Birth place must be under 200 characters",
             )
-        current_user.birth_place_encrypted = encrypt_pii(place)
+        current_user.birth_place_encrypted = encrypt_pii(place) if place else None
 
     if update_data.email is not None:
         email = update_data.email.strip().lower()
-        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid email format",
-            )
-        current_user.email_encrypted = encrypt_pii(email)
-        current_user.email_hash = hash_identifier(email)
+        if email == "":
+            current_user.email_encrypted = None
+            current_user.email_hash = None
+        else:
+            if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid email format",
+                )
+            current_user.email_encrypted = encrypt_pii(email)
+            current_user.email_hash = hash_identifier(email)
 
     if update_data.profession is not None:
         prof = update_data.profession.strip()
@@ -255,9 +263,14 @@ async def add_family_member(
     birth_date = date.fromisoformat(data.birth_date)
     zodiac_sign = get_zodiac_sign(birth_date)
 
+    # Q6 FIX: Validate birth_time format before parsing
     birth_time_val = None
     if data.birth_time:
+        if not re.match(r'^\d{1,2}:\d{2}$', data.birth_time):
+            raise HTTPException(status_code=400, detail="Invalid time format. Use HH:MM")
         h, m = map(int, data.birth_time.split(":"))
+        if not (0 <= h <= 23 and 0 <= m <= 59):
+            raise HTTPException(status_code=400, detail="Invalid time. Hours 0-23, minutes 0-59")
         birth_time_val = time(h, m)
 
     interests = []
@@ -307,6 +320,80 @@ async def delete_family_member(
         raise HTTPException(status_code=404, detail="Family member not found")
     await db.delete(member)
     await db.flush()
+
+
+@router.patch("/family/{member_id}", response_model=FamilyMemberResponse)
+async def update_family_member(
+    member_id: UUID,
+    data: FamilyMemberUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a family member profile.
+
+    Q6 FIX: Includes birth_time format validation.
+    IDOR protected: member must belong to current user.
+    """
+    result = await db.execute(
+        select(FamilyMember)
+        .where(FamilyMember.id == member_id)
+        .where(FamilyMember.owner_id == current_user.id)
+    )
+    member = result.scalar_one_or_none()
+    if member is None:
+        raise HTTPException(status_code=404, detail="Family member not found")
+
+    if data.name is not None:
+        name = data.name.strip()
+        if len(name) < 2 or len(name) > 100:
+            raise HTTPException(status_code=400, detail="Name must be 2-100 characters")
+        member.name_encrypted = encrypt_pii(name)
+
+    if data.relation is not None:
+        if data.relation not in [r.value for r in FamilyRelation]:
+            raise HTTPException(status_code=400, detail="Invalid relation")
+        member.relation = data.relation
+
+    if data.birth_date is not None:
+        try:
+            bd = date.fromisoformat(data.birth_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+        member.birth_date = bd
+        member.zodiac_sign = get_zodiac_sign(bd)
+
+    if data.gender is not None:
+        if data.gender not in [g.value for g in Gender]:
+            raise HTTPException(status_code=400, detail="Invalid gender")
+        member.gender = data.gender
+
+    if data.birth_time is not None:
+        if data.birth_time.strip() == "":
+            member.birth_time = None
+        else:
+            if not re.match(r'^\d{1,2}:\d{2}$', data.birth_time):
+                raise HTTPException(status_code=400, detail="Invalid time format. Use HH:MM or empty string to clear")
+            h, m = map(int, data.birth_time.split(":"))
+            if not (0 <= h <= 23 and 0 <= m <= 59):
+                raise HTTPException(status_code=400, detail="Invalid time. Hours 0-23, minutes 0-59")
+            member.birth_time = time(h, m)
+
+    if data.interests is not None:
+        member.interests = validate_interest_ids(data.interests)
+
+    await db.flush()
+
+    return FamilyMemberResponse(
+        id=member.id,
+        name=decrypt_pii(member.name_encrypted),
+        relation=member.relation,
+        birth_date=member.birth_date,
+        birth_time=member.birth_time,
+        gender=member.gender,
+        zodiac_sign=member.zodiac_sign,
+        interests=member.interests or [],
+        created_at=member.created_at,
+    )
 
 
 # --- Subscription Tiers ---

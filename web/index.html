@@ -68,6 +68,13 @@ input:focus,select:focus{outline:none;border-color:var(--purple)}
 label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--txt2);font-size:0.9rem;cursor:pointer;margin-bottom:12px;padding:4px 0}
 .back-btn:hover{color:var(--neon)}
+/* Profile field view - clickable rows */
+.profile-field{padding:10px 12px;margin-bottom:6px;border-radius:10px;cursor:pointer;transition:background 0.2s}
+.profile-field:hover{background:var(--elev)}
+.profile-field .field{margin-bottom:2px}
+.field-value{font-size:1rem;color:var(--txt);min-height:1.3em}
+.field-empty{color:var(--neon);opacity:0.85;font-style:italic;font-size:0.92rem}
+.field-empty:hover{opacity:1;text-decoration:underline}
 /* Starry sky */
 .starry-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;overflow:hidden}
 .starry-bg canvas{width:100%;height:100%}
@@ -275,19 +282,37 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
     <div class="txt2" id="p-sign"></div>
     <div class="txt2" id="p-birth"></div>
   </div>
-  <div class="card">
+  <div class="card" id="profile-view-card">
     <h2>&#9998; Данные</h2>
-    <label class="field">Время рождения</label>
-    <input type="text" id="ed-time" placeholder="14:30">
-    <label class="field">Место рождения</label>
-    <input type="text" id="ed-place" placeholder="Москва">
-    <label class="field">Профессия</label>
-    <input type="text" id="ed-prof" placeholder="Дизайнер">
-    <label class="field">Email</label>
-    <input type="email" id="ed-email" placeholder="ivan@example.com">
+    <div class="profile-field" data-field="birth_time" onclick="openFieldEditor('birth_time')">
+      <label class="field">Время рождения</label>
+      <div class="field-value" id="pv-time"></div>
+    </div>
+    <div class="profile-field" data-field="birth_place" onclick="openFieldEditor('birth_place')">
+      <label class="field">Место рождения</label>
+      <div class="field-value" id="pv-place"></div>
+    </div>
+    <div class="profile-field" data-field="profession" onclick="openFieldEditor('profession')">
+      <label class="field">Профессия</label>
+      <div class="field-value" id="pv-prof"></div>
+    </div>
+    <div class="profile-field" data-field="email" onclick="openFieldEditor('email')">
+      <label class="field">Email</label>
+      <div class="field-value" id="pv-email"></div>
+    </div>
     <h2 class="mt16">Интересы</h2>
     <div id="int-tags"></div>
-    <button class="btn btn-gold mt16" onclick="saveProfile()">Сохранить</button>
+    <button class="btn btn-gold mt16" onclick="saveInterests()">Сохранить интересы</button>
+  </div>
+  <!-- Inline field editor (shown when user clicks a field) -->
+  <div class="card" id="field-editor" style="display:none;">
+    <h2 id="fe-title">Редактирование</h2>
+    <input type="text" id="fe-input">
+    <div class="flex mt16">
+      <button class="btn btn-gold flex1" onclick="saveFieldEdit()">Сохранить</button>
+      <button class="btn btn-sec flex1" onclick="cancelFieldEdit()">Отмена</button>
+      <button class="btn btn-err flex1 btn-sm" id="fe-clear-btn" onclick="clearFieldEdit()">Очистить</button>
+    </div>
   </div>
 </div>
 
@@ -316,7 +341,26 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <script>
 const API='/api/v1';
 let token=localStorage.getItem('at');
+let refreshToken=localStorage.getItem('rt');
 let curHoroId=null, profile=null, catalog=[], regGender='', famGenderVal='';
+let editingField=null; // currently editing profile field
+
+// V1 FIX: HTML escape utility to prevent XSS via user-generated content
+function esc(str){
+  if(!str)return '';
+  const d=document.createElement('div');d.textContent=str;return d.innerHTML;
+}
+
+// Helper: set field value or show "Не заполнено"
+function setFieldOrEmpty(el, value){
+  if(value){
+    el.textContent=value;
+    el.classList.remove('field-empty');
+  }else{
+    el.textContent='Не заполнено';
+    el.classList.add('field-empty');
+  }
+}
 
 // ===== Zodiac glyphs (standard astrology symbols with subtle glow animation) =====
 const zodiacSVG={
@@ -490,13 +534,16 @@ async function devLogin(){
   try{
     const r=await fetch(API+'/auth/dev-login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
     if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.detail||'Login failed');}
-    const d=await r.json();token=d.access_token;localStorage.setItem('at',token);
+    const d=await r.json();
+    token=d.access_token;refreshToken=d.refresh_token;
+    localStorage.setItem('at',token);localStorage.setItem('rt',refreshToken);
     await loadProfile();showSection('horoscope');document.querySelector('.topbar').style.display='flex';
   }catch(e){notify(e.message,'error');}
 }
 
 function logout(){
-  localStorage.removeItem('at');token=null;profile=null;
+  localStorage.removeItem('at');localStorage.removeItem('rt');
+  token=null;refreshToken=null;profile=null;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-auth').classList.add('active');
   document.querySelector('.topbar').style.display='none';
@@ -504,11 +551,33 @@ function logout(){
   document.getElementById('drawer-overlay').classList.remove('open');
 }
 
+// F4 FIX: Auto-refresh token on 401 before logging out
+async function tryRefreshToken(){
+  if(!refreshToken)return false;
+  try{
+    const r=await fetch(API+'/auth/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refresh_token:refreshToken})});
+    if(!r.ok)return false;
+    const d=await r.json();
+    token=d.access_token;refreshToken=d.refresh_token;
+    localStorage.setItem('at',token);localStorage.setItem('rt',refreshToken);
+    return true;
+  }catch(e){return false;}
+}
+
 async function api(p,m='GET',b=null){
   const o={method:m,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
   if(b)o.body=JSON.stringify(b);
-  const r=await fetch(API+p,o);
-  if(r.status===401){logout();throw new Error('Сессия истекла, войдите заново');}
+  let r=await fetch(API+p,o);
+  // F4: On 401, try refreshing token before giving up
+  if(r.status===401){
+    const refreshed=await tryRefreshToken();
+    if(refreshed){
+      o.headers['Authorization']='Bearer '+token;
+      r=await fetch(API+p,o);
+    }else{
+      logout();throw new Error('Сессия истекла, войдите заново');
+    }
+  }
   if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Ошибка сервера ('+r.status+')');}
   if(r.status===204)return null;
   const t=await r.text();return t?JSON.parse(t):null;
@@ -687,10 +756,11 @@ async function loadHistory(){
     const d=await api('/horoscope/history');
     const el=document.getElementById('hist-list');
     if(!d.horoscopes.length){el.innerHTML='<div class="card center txt2">Пока нет гороскопов</div>';return;}
+    // V1 FIX: Escape horoscope text in history to prevent XSS
     el.innerHTML=d.horoscopes.map(h=>{
       const fb=h.feedback==='like'?'&#128077;':h.feedback==='dislike'?'&#128078;':'';
       const ic=h.horoscope_type==='focused'?'&#127919;':'&#128302;';
-      return '<div class="card"><div class="flex mb8" style="justify-content:space-between;"><span>'+ic+' '+h.horoscope_date+'</span><span>'+fb+'</span></div><div class="horo-text" style="font-size:0.92rem;">'+h.horoscope_text.substring(0,200)+'...</div></div>';
+      return '<div class="card"><div class="flex mb8" style="justify-content:space-between;"><span>'+ic+' '+esc(h.horoscope_date)+'</span><span>'+fb+'</span></div><div class="horo-text" style="font-size:0.92rem;">'+esc(h.horoscope_text.substring(0,200))+'...</div></div>';
     }).join('');
   }catch(e){notify(e.message,'error');}
 }
@@ -699,8 +769,9 @@ async function loadHistory(){
 async function loadFamily(){
   try{
     const members=await api('/profile/family');
+    // V1 FIX: Use esc() to prevent XSS via family member names
     const el=document.getElementById('fam-list');
-    el.innerHTML=members.map(m=>'<div class="card"><div class="gold">'+m.name+'</div><div class="txt2">'+m.relation+' &middot; '+m.zodiac_sign+' &middot; '+m.birth_date+'</div><button class="btn btn-sec btn-sm mt16" onclick="genHoroFor(\''+m.id+'\')">&#128302; Гороскоп</button></div>').join('');
+    el.innerHTML=members.map(m=>'<div class="card"><div class="gold">'+esc(m.name)+'</div><div class="txt2">'+esc(m.relation)+' &middot; '+esc(m.zodiac_sign)+' &middot; '+esc(m.birth_date)+'</div><button class="btn btn-sec btn-sm mt16" onclick="genHoroFor(\''+esc(m.id)+'\')">&#128302; Гороскоп</button></div>').join('');
     const lim=await api('/horoscope/limits');
     document.getElementById('fam-add').style.display=lim.family_members_limit>0?'block':'none';
     const sel=document.getElementById('fam-rel');
@@ -736,22 +807,76 @@ function loadProfileScreen(){
   document.getElementById('p-name').textContent=profile.name;
   document.getElementById('p-sign').textContent=profile.zodiac_sign;
   document.getElementById('p-birth').textContent=profile.birth_date;
-  document.getElementById('ed-time').value=profile.birth_time||'';
-  document.getElementById('ed-place').value=profile.birth_place||'';
-  document.getElementById('ed-prof').value=profile.profession||'';
-  document.getElementById('ed-email').value=profile.email||'';
+
+  // UI FIX: Show "Не заполнено" for empty fields with clickable styling
+  setFieldOrEmpty(document.getElementById('pv-time'), profile.birth_time||'');
+  setFieldOrEmpty(document.getElementById('pv-place'), profile.birth_place||'');
+  setFieldOrEmpty(document.getElementById('pv-prof'), profile.profession||'');
+  setFieldOrEmpty(document.getElementById('pv-email'), profile.email||'');
+
+  // Hide field editor when loading
+  document.getElementById('field-editor').style.display='none';
+  editingField=null;
+
   document.getElementById('int-tags').innerHTML=catalog.map(i=>{
     const s=(profile.interests||[]).includes(i.id)?'sel':'';
-    return '<span class="tag '+s+'" data-id="'+i.id+'" onclick="this.classList.toggle(\'sel\')">'+(i.icon||'')+' '+i.label_ru+'</span>';
+    return '<span class="tag '+s+'" data-id="'+esc(i.id)+'" onclick="this.classList.toggle(\'sel\')">'+(i.icon?esc(i.icon):'')+' '+esc(i.label_ru)+'</span>';
   }).join('');
 }
-async function saveProfile(){
+
+// Field editor logic
+const fieldConfig={
+  birth_time:{label:'Время рождения',type:'time',key:'birth_time',placeholder:'14:30'},
+  birth_place:{label:'Место рождения',type:'text',key:'birth_place',placeholder:'Москва'},
+  profession:{label:'Профессия',type:'text',key:'profession',placeholder:'Дизайнер'},
+  email:{label:'Email',type:'email',key:'email',placeholder:'ivan@example.com'}
+};
+
+function openFieldEditor(field){
+  const cfg=fieldConfig[field];if(!cfg)return;
+  editingField=field;
+  document.getElementById('fe-title').textContent=cfg.label;
+  const inp=document.getElementById('fe-input');
+  inp.type=cfg.type;inp.placeholder=cfg.placeholder;
+  // Pre-fill with current value
+  const val=profile[cfg.key]||'';
+  inp.value=val;
+  document.getElementById('fe-clear-btn').style.display=val?'inline-block':'none';
+  document.getElementById('field-editor').style.display='block';
+  inp.focus();
+}
+
+function cancelFieldEdit(){
+  document.getElementById('field-editor').style.display='none';
+  editingField=null;
+}
+
+async function saveFieldEdit(){
+  if(!editingField)return;
+  const cfg=fieldConfig[editingField];
+  const val=document.getElementById('fe-input').value.trim();
+  const body={};body[cfg.key]=val||'';
+  try{
+    profile=await api('/profile/me','PATCH',body);
+    notify('Сохранено!','success');
+    cancelFieldEdit();loadProfileScreen();
+  }catch(e){notify(e.message,'error');}
+}
+
+async function clearFieldEdit(){
+  if(!editingField)return;
+  const cfg=fieldConfig[editingField];
+  const body={};body[cfg.key]='';
+  try{
+    profile=await api('/profile/me','PATCH',body);
+    notify('Поле очищено','success');
+    cancelFieldEdit();loadProfileScreen();
+  }catch(e){notify(e.message,'error');}
+}
+
+async function saveInterests(){
   const ints=Array.from(document.querySelectorAll('#int-tags .sel')).map(t=>t.dataset.id);
-  const b={interests:ints};
-  const v=id=>document.getElementById(id).value.trim();
-  if(v('ed-time'))b.birth_time=v('ed-time');if(v('ed-place'))b.birth_place=v('ed-place');
-  if(v('ed-prof'))b.profession=v('ed-prof');if(v('ed-email'))b.email=v('ed-email');
-  try{profile=await api('/profile/me','PATCH',b);notify('Профиль сохранен!','success');loadProfileScreen();}catch(e){notify(e.message,'error');}
+  try{profile=await api('/profile/me','PATCH',{interests:ints});notify('Интересы сохранены!','success');loadProfileScreen();}catch(e){notify(e.message,'error');}
 }
 
 // Tiers

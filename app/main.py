@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import ads, auth, debug, horoscope, profile
+from app.api import ads, auth, horoscope, profile
 from app.core.config import settings
 from app.core.database import engine
 from app.core.redis import redis_client
@@ -58,7 +58,12 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(profile.router, prefix="/api/v1")
 app.include_router(horoscope.router, prefix="/api/v1")
 app.include_router(ads.router, prefix="/api/v1")
-app.include_router(debug.router, prefix="/api/v1")
+
+# S1/S2 FIX: Debug and dev-login endpoints are only registered when DEBUG=true.
+# In production (DEBUG=false), these routes simply don't exist - no runtime check needed.
+if settings.DEBUG:
+    from app.api import debug
+    app.include_router(debug.router, prefix="/api/v1")
 
 
 @app.get("/health")
