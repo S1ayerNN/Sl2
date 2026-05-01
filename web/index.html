@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#0f0f23;--card:#1a1a2e;--elev:#232342;--gold:#e2b714;--purple:#7b2ff7;--neon:#a78bfa;--blue:#4361ee;--txt:#f5f5f5;--txt2:#8b8b9e;--ok:#06d6a0;--err:#ef476f}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;max-width:520px;margin:0 auto;padding:0 4px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;max-width:520px;margin:0 auto;padding:0}
 .screen{display:none;padding:16px;padding-top:60px;min-height:100vh}
 .screen.active{display:block}
 /* Top bar */
@@ -23,7 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .drawer{position:fixed;top:0;right:-280px;width:280px;height:100%;background:var(--card);z-index:201;transition:right 0.3s;padding:20px;padding-top:60px;overflow-y:auto}
 .drawer.open{right:0}
 .drawer-close{position:absolute;top:16px;right:16px;font-size:1.5rem;cursor:pointer;color:var(--txt2)}
-.drawer-item{padding:12px 0;border-bottom:1px solid var(--elev);cursor:pointer;display:flex;align-items:center;gap:10px}
+.drawer-item{padding:12px 0;border-bottom:1px solid var(--elev);cursor:pointer;display:flex;align-items:center;gap:10px;font-size:0.95rem}
 .drawer-item:hover{color:var(--neon)}
 .drawer-item.active{color:var(--neon)}
 .drawer-section{color:var(--txt2);font-size:0.8rem;text-transform:uppercase;margin-top:16px;margin-bottom:4px;letter-spacing:1px}
@@ -68,13 +68,6 @@ input:focus,select:focus{outline:none;border-color:var(--purple)}
 label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--txt2);font-size:0.9rem;cursor:pointer;margin-bottom:12px;padding:4px 0}
 .back-btn:hover{color:var(--neon)}
-/* Profile field view - clickable rows */
-.profile-field{padding:10px 12px;margin-bottom:6px;border-radius:10px;cursor:pointer;transition:background 0.2s}
-.profile-field:hover{background:var(--elev)}
-.profile-field .field{margin-bottom:2px}
-.field-value{font-size:1rem;color:var(--txt);min-height:1.3em}
-.field-empty{color:var(--neon);opacity:0.85;font-style:italic;font-size:0.92rem}
-.field-empty:hover{opacity:1;text-decoration:underline}
 /* Starry sky */
 .starry-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;overflow:hidden}
 .starry-bg canvas{width:100%;height:100%}
@@ -84,24 +77,68 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 @keyframes shimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 /* Profile card in horoscope */
 .profile-card{display:flex;gap:16px;align-items:center;text-align:left;width:100%}
-.profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--elev);display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;border:2px solid var(--purple);overflow:hidden}
-.profile-avatar img{width:100%;height:100%;object-fit:cover}
+/* profile-avatar styles are below with zodiac-3d */
 .profile-info{flex:1;min-width:0}
 .profile-name{font-size:1.15rem;color:var(--neon);font-weight:500;margin-bottom:2px}
 .profile-birth{font-size:0.85rem;color:var(--txt2);margin-bottom:4px}
 .profile-zodiac{display:flex;align-items:center;gap:8px;font-size:0.95rem}
-/* Animated zodiac SVG */
+/* Animated zodiac SVG - small inline version */
 .zodiac-anim{width:28px;height:28px;display:inline-block}
 .zodiac-anim svg{width:100%;height:100%}
 .zodiac-anim svg path,.zodiac-anim svg circle,.zodiac-anim svg line,.zodiac-anim svg polyline{stroke:#c0c0d0;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(192,192,208,0.5));animation:zodiacGlow 3s ease infinite}
 @keyframes zodiacGlow{0%,100%{stroke:#c0c0d0;filter:drop-shadow(0 0 3px rgba(192,192,208,0.4))}50%{stroke:#e8e8f0;filter:drop-shadow(0 0 6px rgba(192,192,208,0.8))}}
+/* Large zodiac sign - purple themed pulse glow */
+.zodiac-3d{width:48px;height:48px;display:inline-block;animation:zodiacPulse 3s ease-in-out infinite}
+.zodiac-3d svg{width:100%;height:100%}
+.zodiac-3d svg path,.zodiac-3d svg circle,.zodiac-3d svg line,.zodiac-3d svg polyline{stroke:var(--neon);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px rgba(167,139,250,0.5)) drop-shadow(0 0 10px rgba(123,47,247,0.3));animation:zodiacPurpleGlow 3s ease-in-out infinite}
+@keyframes zodiacPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes zodiacPurpleGlow{0%,100%{stroke:var(--neon);filter:drop-shadow(0 0 4px rgba(167,139,250,0.4)) drop-shadow(0 0 8px rgba(123,47,247,0.2))}50%{stroke:#c4b5fd;filter:drop-shadow(0 0 8px rgba(167,139,250,0.7)) drop-shadow(0 0 16px rgba(123,47,247,0.4))}}
+/* Profile avatar - large on horoscope screen */
+.profile-avatar{width:120px;height:120px;border-radius:50%;background:var(--elev);display:flex;align-items:center;justify-content:center;font-size:3rem;flex-shrink:0;border:2px solid var(--purple);overflow:hidden}
+.profile-avatar img{width:100%;height:100%;object-fit:cover}
+/* Horizontal field row */
+.field-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.field-row .field-label{flex:0 0 110px;color:var(--txt2);font-size:0.82rem;text-align:left}
+.field-row input,.field-row select{flex:1;margin-bottom:0}
+/* Tooltip */
+.tooltip-wrap{position:relative;display:inline-block}
+.tooltip-wrap .tooltip-text{visibility:hidden;background:var(--elev);color:var(--txt);font-size:0.78rem;padding:8px 12px;border-radius:8px;border:1px solid var(--purple);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;z-index:10;opacity:0;transition:opacity 0.2s}
+/* Confirm modal */
+.confirm-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center}
+.confirm-modal.open{display:flex}
+.confirm-modal-content{background:var(--card);border-radius:16px;padding:24px;max-width:360px;width:90%;text-align:center}
+.tooltip-wrap:hover .tooltip-text{visibility:visible;opacity:1}
+/* Avatar upload area */
+.avatar-upload{position:relative;width:100px;height:100px;border-radius:50%;border:2px dashed var(--purple);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:visible;flex-shrink:0;transition:border-color 0.3s}
+.avatar-upload:hover{border-color:var(--neon)}
+.avatar-upload .avatar-inner{width:100%;height:100%;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.avatar-upload img{width:100%;height:100%;object-fit:cover}
+.avatar-upload-label{position:absolute;bottom:-2px;left:0;right:0;background:rgba(0,0,0,0.6);color:var(--txt2);font-size:0.7rem;text-align:center;padding:4px 0;border-radius:0 0 50px 50px;z-index:2}
+.avatar-upload input[type="file"]{display:none}
+/* Circular upload progress */
+.avatar-loader{position:absolute;top:-4px;left:-4px;width:108px;height:108px;display:none;z-index:3}
+.avatar-loader.active{display:block}
+.avatar-loader svg{width:100%;height:100%;transform:rotate(-90deg)}
+.avatar-loader circle{fill:none;stroke:var(--neon);stroke-width:3;stroke-linecap:round;stroke-dasharray:314;stroke-dashoffset:314;transition:stroke-dashoffset 0.3s}
+/* Like/dislike - subtle theme colors */
+.btn-feedback{background:var(--elev);color:var(--txt2);border:1px solid var(--elev);transition:all 0.2s}
+.btn-feedback:hover{border-color:var(--purple);color:var(--txt)}
+.btn-feedback.liked{border-color:var(--neon);color:var(--neon)}
+.btn-feedback.disliked{border-color:var(--txt2);color:var(--txt2)}
+/* Profile edit mode */
+.profile-field-ro{padding:11px;background:transparent;border:1px solid transparent;border-radius:12px;color:var(--txt);font-size:1rem;margin-bottom:10px;width:100%}
+.profile-hint{color:var(--txt2);font-size:0.82rem;margin-bottom:12px;font-style:italic}
+/* Interests modal */
+.interests-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center}
+.interests-modal.open{display:flex}
+.interests-modal-content{background:var(--card);border-radius:16px;padding:20px;max-width:480px;width:90%;max-height:70vh;overflow-y:auto}
 </style>
 </head>
 <body>
 
 <!-- Top Bar -->
 <div class="topbar">
-  <div class="topbar-title">MYASTRO</div>
+  <div class="topbar-title">MY.ASTRO</div>
   <div class="topbar-icons">
     <span class="topbar-icon" id="tier-icon" onclick="showSection('subscription')">&#11088;</span>
     <span class="topbar-icon" onclick="toggleDrawer()">&#9776;</span>
@@ -113,16 +150,16 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <div class="drawer" id="drawer">
   <span class="drawer-close" onclick="toggleDrawer()">&times;</span>
   <div class="drawer-section">Разделы</div>
-  <div class="drawer-item active" data-section="horoscope" onclick="showSection('horoscope')">&#128302; Гороскоп</div>
-  <div class="drawer-item" data-section="history" onclick="showSection('history')">&#128220; Предыдущие гороскопы</div>
-  <div class="drawer-item" data-section="family" onclick="showSection('family')">&#128106; Семья</div>
+  <div class="drawer-item active" data-section="horoscope" onclick="showSection('horoscope')"><span style="width:24px;display:inline-block;text-align:center;">&#128302;</span> Гороскоп</div>
+  <div class="drawer-item" data-section="history" onclick="showSection('history')"><span style="width:24px;display:inline-block;text-align:center;">&#128220;</span> Предыдущие</div>
+  <div class="drawer-item" data-section="family" onclick="showSection('family')"><span style="width:24px;display:inline-block;text-align:center;">&#128587;</span> Семья</div>
   <div class="drawer-section">Будущие разделы</div>
-  <div class="drawer-item txt2">&#127183; Таро (скоро)</div>
-  <div class="drawer-item txt2">&#128722; Магазин (скоро)</div>
+  <div class="drawer-item txt2"><span style="width:24px;display:inline-block;text-align:center;">&#127183;</span> Таро (скоро)</div>
+  <div class="drawer-item txt2"><span style="width:24px;display:inline-block;text-align:center;">&#128722;</span> Магазин (скоро)</div>
   <div class="drawer-section">Настройки</div>
-  <div class="drawer-item" data-section="profile" onclick="showSection('profile')">&#128100; Профиль и данные</div>
-  <div class="drawer-item" data-section="subscription" onclick="showSection('subscription')">&#11088; Подписка</div>
-  <div class="drawer-item" data-section="settings" onclick="showSection('settings')">&#9881; Настройки</div>
+  <div class="drawer-item" data-section="profile" onclick="showSection('profile')"><span style="width:24px;display:inline-block;text-align:center;">&#128100;</span> Профиль</div>
+  <div class="drawer-item" data-section="subscription" onclick="showSection('subscription')"><span style="width:24px;display:inline-block;text-align:center;">&#11088;</span> Подписка</div>
+  <div class="drawer-item" data-section="settings" onclick="showSection('settings')"><span style="width:24px;display:inline-block;text-align:center;">&#9881;</span> Настройки</div>
   <div style="margin-top:30px;">
     <button class="btn btn-sec" onclick="logout()" style="font-size:0.9rem;">Выйти</button>
   </div>
@@ -134,12 +171,15 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <!-- AUTH -->
 <div id="screen-auth" class="screen active" style="padding-top:0;">
   <div class="starry-bg"><canvas id="starCanvas"></canvas></div>
-  <div class="auth-content center" style="padding-top:100px;">
+  <div class="auth-content center" style="padding-top:35vh;">
     <div class="landing-title">MY.ASTRO</div>
     <div class="txt2 mb16" style="font-size:0.95rem;margin-top:8px;">Твой персональный астролог каждый день рядом</div>
-    <div style="margin-top:50px;">
+    <div style="margin-top:40px;">
       <button class="btn btn-gold" onclick="devLogin()">Войти (тестовый режим)</button>
       <p class="txt2 mt16" style="font-size:0.82rem;">В продакшене: Telegram / Google</p>
+    </div>
+    <div style="position:fixed;bottom:16px;left:0;right:0;text-align:center;">
+      <a href="/privacy.html" target="_blank" class="txt2" style="font-size:0.75rem;text-decoration:underline;opacity:0.6;">Политика обработки персональных данных</a>
     </div>
   </div>
 </div>
@@ -200,14 +240,23 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   <div class="card">
     <div class="profile-card">
       <div class="profile-avatar" id="user-avatar">&#128100;</div>
-      <div class="profile-info">
-        <div class="profile-name" id="user-greeting"></div>
-        <div class="profile-birth" id="z-date"></div>
-        <div class="profile-zodiac">
-          <span class="zodiac-anim" id="z-anim"></span>
-          <span id="z-name"></span>
+      <div class="profile-info" style="margin-left:12px;text-align:left;flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="flex:1;">
+            <div class="profile-name" id="user-greeting" style="font-size:1.4rem;font-weight:500;margin-bottom:4px;"></div>
+            <div class="tooltip-wrap" onclick="showSection('subscription')">
+              <span id="z-badge" class="badge badge-free" style="cursor:pointer;"></span>
+              <span class="tooltip-text">Раскрой все возможности в подписке</span>
+            </div>
+          </div>
+          <div style="text-align:center;flex-shrink:0;margin-left:12px;">
+            <div class="profile-zodiac" style="justify-content:center;">
+              <span class="zodiac-3d" id="z-anim"></span>
+            </div>
+            <span id="z-name" style="font-size:0.85rem;color:var(--neon);"></span>
+            <div class="txt2" id="z-date" style="font-size:0.78rem;margin-top:2px;"></div>
+          </div>
         </div>
-        <span id="z-badge" class="badge badge-free mt16" style="margin-top:6px;"></span>
       </div>
     </div>
   </div>
@@ -225,8 +274,8 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
       <div class="horo-text" id="res-text"></div>
     </div>
     <div class="flex">
-      <button class="btn btn-ok flex1 btn-sm" id="btn-like" onclick="feedback('like')">&#128077; Нравится</button>
-      <button class="btn btn-err flex1 btn-sm" id="btn-dislike" onclick="feedback('dislike')">&#128078; Не нравится</button>
+      <button class="btn btn-feedback flex1 btn-sm" id="btn-like" onclick="feedback('like')">&#128077; Нравится</button>
+      <button class="btn btn-feedback flex1 btn-sm" id="btn-dislike" onclick="feedback('dislike')">&#128078; Не нравится</button>
     </div>
   </div>
 
@@ -243,89 +292,126 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 
 <!-- HISTORY -->
 <div id="screen-history" class="screen">
-  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
   <h1 class="mb16">&#128220; Предыдущие гороскопы</h1>
   <div id="hist-list"></div>
 </div>
 
 <!-- FAMILY -->
 <div id="screen-family" class="screen">
-  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
-  <h1 class="mb16">&#128106; Семья</h1>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
+  <h1 class="mb16">&#128587; Семья</h1>
   <div id="fam-list"></div>
   <div id="fam-add" style="display:none;">
     <button class="btn btn-sec" onclick="showAddFamily()">+ Добавить</button>
   </div>
   <div id="fam-form" style="display:none;" class="card">
-    <h2>Новый член семьи</h2>
-    <select id="fam-rel"><option value="">Кто это?</option></select>
-    <input type="text" id="fam-name" placeholder="Имя">
-    <input type="date" id="fam-birth">
-    <div class="flex mb8">
-      <button class="btn btn-sec flex1 btn-sm" id="fam-m" onclick="famGender('male')">&#9794; М</button>
-      <button class="btn btn-sec flex1 btn-sm" id="fam-f" onclick="famGender('female')">&#9792; Ж</button>
+    <h2 style="font-size:1rem;font-weight:400;margin-bottom:12px;">Добавь близкого тебе человека</h2>
+    <div class="field-row"><span class="field-label">Это</span><select id="fam-rel" onchange="onRelationChange()" style="font-size:0.95rem;"><option value="">Выбери</option></select></div>
+    <div class="field-row"><span class="field-label">Имя</span><input type="text" id="fam-name" placeholder="Имя" maxlength="50" style="font-size:0.95rem;"></div>
+    <div class="field-row"><span class="field-label">Дата рождения</span>
+      <div style="display:flex;gap:4px;flex:1;">
+        <select id="fam-birth-day" style="flex:1;font-size:0.95rem;"></select>
+        <select id="fam-birth-month" style="flex:1.2;font-size:0.95rem;" onchange="updateFamBirthDays()"></select>
+        <select id="fam-birth-year" style="flex:1;font-size:0.95rem;" onchange="updateFamBirthDays()"></select>
+      </div>
+      <input type="hidden" id="fam-birth">
     </div>
-    <div class="flex">
-      <button class="btn btn-gold flex1" onclick="addFamily()">Добавить</button>
-      <button class="btn btn-sec flex1" onclick="hideAddFamily()">Отмена</button>
+    <div class="field-row" id="fam-gender-row"><span class="field-label">Пол</span>
+      <div class="flex" style="flex:1;gap:4px;">
+        <button class="btn btn-sec flex1 btn-sm" id="fam-m" onclick="famGender('male')" style="margin:0;font-size:0.95rem;">&#9794; М</button>
+        <button class="btn btn-sec flex1 btn-sm" id="fam-f" onclick="famGender('female')" style="margin:0;font-size:0.95rem;">&#9792; Ж</button>
+      </div>
+    </div>
+    <div id="fam-gender-auto" style="display:none;" class="field-row"><span class="field-label">Пол</span><span id="fam-gender-label" style="padding:11px;font-size:0.95rem;color:var(--txt2);"></span></div>
+    <div class="flex mt16">
+      <button class="btn btn-gold flex1" id="fam-submit-btn" onclick="addFamily()" style="font-size:0.95rem;">Добавить</button>
+      <button class="btn btn-sec flex1" onclick="hideAddFamily()" style="font-size:0.95rem;">Отмена</button>
     </div>
   </div>
 </div>
 
 <!-- PROFILE -->
 <div id="screen-profile" class="screen">
-  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
-  <h1 class="mb16">&#128100; Профиль</h1>
-  <div class="card center">
-    <div id="p-zodiac" style="font-size:2.5rem;"></div>
-    <div class="gold" id="p-name" style="font-size:1.1rem;"></div>
-    <div class="txt2" id="p-sign"></div>
-    <div class="txt2" id="p-birth"></div>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
+  <h1 class="mb16">Профиль</h1>
+  <div class="card" style="display:flex;align-items:center;gap:16px;">
+    <div class="avatar-upload" id="avatar-upload-area" onclick="document.getElementById('avatar-file').click()">
+      <div class="avatar-inner">
+        <img id="p-avatar-img" src="" style="display:none;">
+        <span id="p-avatar-placeholder" style="font-size:2.2rem;color:var(--txt2);">&#128247;</span>
+      </div>
+      <div class="avatar-upload-label">Загрузить</div>
+      <div class="avatar-loader" id="avatar-loader">
+        <svg><circle cx="54" cy="54" r="50" id="avatar-progress-circle"/></svg>
+      </div>
+      <input type="file" id="avatar-file" accept="image/jpeg,image/png,image/webp,image/gif" onchange="uploadAvatar(this)">
+    </div>
+    <div style="flex:1;text-align:center;">
+      <div id="p-zodiac"></div>
+      <div class="txt2" id="p-sign"></div>
+    </div>
   </div>
-  <div class="card" id="profile-view-card">
-    <h2>&#9998; Данные</h2>
-    <div class="profile-field" data-field="birth_time" onclick="openFieldEditor('birth_time')">
-      <label class="field">Время рождения</label>
-      <div class="field-value" id="pv-time"></div>
+  <div class="card">
+    <div class="profile-hint" style="margin-bottom:12px;">Добавь чуть больше информации о себе для уточнения прогноза</div>
+    <div class="field-row"><span class="field-label">Пол</span><span id="ed-gender" style="padding:11px;font-size:1.1rem;"></span></div>
+    <div class="field-row"><span class="field-label">Имя</span><input type="text" id="ed-name" placeholder="Имя" maxlength="50" disabled></div>
+    <div class="field-row"><span class="field-label">Дата рождения</span>
+      <div style="display:flex;gap:4px;flex:1;">
+        <select id="ed-birth-day" disabled style="flex:1;font-size:0.95rem;"></select>
+        <select id="ed-birth-month" disabled style="flex:1.2;font-size:0.95rem;" onchange="updateBirthDays()"></select>
+        <select id="ed-birth-year" disabled style="flex:1;font-size:0.95rem;" onchange="updateBirthDays()"></select>
+      </div>
+      <input type="hidden" id="ed-birthdate">
     </div>
-    <div class="profile-field" data-field="birth_place" onclick="openFieldEditor('birth_place')">
-      <label class="field">Место рождения</label>
-      <div class="field-value" id="pv-place"></div>
+    <div class="field-row"><span class="field-label">Место рождения</span><input type="text" id="ed-place" placeholder="Москва" maxlength="50" disabled></div>
+    <div class="field-row"><span class="field-label">Время рождения</span><input type="text" id="ed-time" placeholder="1430" maxlength="5" disabled></div>
+    <div class="field-row"><span class="field-label">Профессия</span><input type="text" id="ed-prof" placeholder="Дизайнер" maxlength="50" disabled></div>
+    <div class="field-row"><span class="field-label">Email</span><input type="email" id="ed-email" placeholder="ivan@example.com" maxlength="50" disabled></div>
+    <span id="btn-edit-profile" onclick="toggleEditProfile()" style="cursor:pointer;font-size:0.82rem;color:var(--neon);display:inline-block;margin-top:8px;">&#9998; Изменить</span>
+    <div id="profile-save-area" style="display:none;">
+      <button class="btn btn-gold mt16" onclick="saveProfile()">Сохранить</button>
     </div>
-    <div class="profile-field" data-field="profession" onclick="openFieldEditor('profession')">
-      <label class="field">Профессия</label>
-      <div class="field-value" id="pv-prof"></div>
-    </div>
-    <div class="profile-field" data-field="email" onclick="openFieldEditor('email')">
-      <label class="field">Email</label>
-      <div class="field-value" id="pv-email"></div>
-    </div>
-    <h2 class="mt16">Интересы</h2>
-    <div id="int-tags"></div>
-    <button class="btn btn-gold mt16" onclick="saveInterests()">Сохранить интересы</button>
   </div>
-  <!-- Inline field editor (shown when user clicks a field) -->
-  <div class="card" id="field-editor" style="display:none;">
-    <h2 id="fe-title">Редактирование</h2>
-    <input type="text" id="fe-input">
-    <div class="flex mt16">
-      <button class="btn btn-gold flex1" onclick="saveFieldEdit()">Сохранить</button>
-      <button class="btn btn-sec flex1" onclick="cancelFieldEdit()">Отмена</button>
-      <button class="btn btn-err flex1 btn-sm" id="fe-clear-btn" onclick="clearFieldEdit()">Очистить</button>
+  <div class="card">
+    <div id="int-tags-display" style="margin-bottom:8px;"></div>
+    <span onclick="openInterestsModal()" style="cursor:pointer;font-size:0.82rem;color:var(--neon);">&#9998; Изменить</span>
+  </div>
+</div>
+
+<!-- Confirm delete modal -->
+<div class="confirm-modal" id="confirm-modal">
+  <div class="confirm-modal-content">
+    <div style="font-size:1.1rem;margin-bottom:16px;">Вы действительно хотите удалить запись?</div>
+    <div class="flex">
+      <button class="btn btn-gold flex1" id="confirm-yes" onclick="">Удалить</button>
+      <button class="btn btn-sec flex1" onclick="closeConfirmModal()">Отмена</button>
     </div>
+  </div>
+</div>
+
+<!-- Interests edit modal -->
+<div class="interests-modal" id="interests-modal">
+  <div class="interests-modal-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 style="margin:0;">Выбери интересы</h2>
+      <span style="font-size:1.5rem;cursor:pointer;color:var(--txt2);" onclick="closeInterestsModal()">&times;</span>
+    </div>
+    <div id="int-tags-edit"></div>
+    <button class="btn btn-gold mt16" onclick="saveInterests()">Сохранить</button>
   </div>
 </div>
 
 <!-- SUBSCRIPTION -->
 <div id="screen-subscription" class="screen">
-  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
   <h1 class="mb16">&#11088; Подписка</h1>
   <div id="tiers-list"></div>
 </div>
 
 <!-- SETTINGS -->
 <div id="screen-settings" class="screen">
-  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Гороскоп</div>
+  <div class="back-btn" onclick="showSection('horoscope')">&#8592; Вернуться</div>
   <h1 class="mb16">&#9881; Настройки</h1>
   <div class="card">
     <div class="drawer-item" onclick="notify('Скоро!','info')">&#128276; Уведомления</div>
@@ -343,23 +429,11 @@ const API='/api/v1';
 let token=localStorage.getItem('at');
 let refreshToken=localStorage.getItem('rt');
 let curHoroId=null, profile=null, catalog=[], regGender='', famGenderVal='';
-let editingField=null; // currently editing profile field
 
 // V1 FIX: HTML escape utility to prevent XSS via user-generated content
 function esc(str){
   if(!str)return '';
   const d=document.createElement('div');d.textContent=str;return d.innerHTML;
-}
-
-// Helper: set field value or show "Не заполнено"
-function setFieldOrEmpty(el, value){
-  if(value){
-    el.textContent=value;
-    el.classList.remove('field-empty');
-  }else{
-    el.textContent='Не заполнено';
-    el.classList.add('field-empty');
-  }
 }
 
 // ===== Zodiac glyphs (standard astrology symbols with subtle glow animation) =====
@@ -376,6 +450,13 @@ const zodiacSVG={
   'Козерог':'<svg viewBox="0 0 40 40"><path d="M6 6 L6 22 C6 30 12 30 14 24 L14 6" fill="none"/><path d="M14 18 C18 28 30 28 30 20 C30 14 26 14 26 18" fill="none"/></svg>',
   'Водолей':'<svg viewBox="0 0 40 40"><path d="M4 16 C8 12 10 16 14 12 C18 8 20 12 24 8 C28 4 30 8 36 4" fill="none"/><path d="M4 26 C8 22 10 26 14 22 C18 18 20 22 24 18 C28 14 30 18 36 14" fill="none"/></svg>',
   'Рыбы':'<svg viewBox="0 0 40 40"><path d="M6 20 C12 10 18 10 18 20 C18 30 12 30 6 20" fill="none"/><path d="M34 20 C28 10 22 10 22 20 C22 30 28 30 34 20" fill="none"/><line x1="4" y1="20" x2="36" y2="20"/></svg>'
+};
+
+// Zodiac emoji for default avatars
+const zodiacEmoji={
+  'Овен':'♈','Телец':'♉','Близнецы':'♊','Рак':'♋',
+  'Лев':'♌','Дева':'♍','Весы':'♎','Скорпион':'♏',
+  'Стрелец':'♐','Козерог':'♑','Водолей':'♒','Рыбы':'♓'
 };
 
 // ===== Starry Sky with drift =====
@@ -400,14 +481,43 @@ const zodiacSVG={
     });
   }
 
-  // Constellation: Scorpius (real star positions, shifted lower)
-  const cPoints=[
-    {x:0.22,y:0.50},{x:0.26,y:0.48},{x:0.30,y:0.52},{x:0.35,y:0.55},
-    {x:0.40,y:0.58},{x:0.46,y:0.62},{x:0.52,y:0.66},{x:0.58,y:0.70},
-    {x:0.62,y:0.74},{x:0.66,y:0.72},{x:0.70,y:0.68},{x:0.74,y:0.65},
-    {x:0.72,y:0.60},{x:0.68,y:0.63}
-  ];
-  const cLines=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,13]];
+  // Zodiac figure constellations - stars form the shape of the zodiac sign
+  // Each figure: points (star positions) + lines (connections) + outline (faint figure shape)
+  const zodiacFigures = {
+    // Ursa Major (Big Dipper) - button width (~0.35-0.65)
+    ursaMajor: {
+      stars: [
+        {x:0.36,y:0.14},{x:0.40,y:0.11},{x:0.46,y:0.10},{x:0.52,y:0.13}, // bowl
+        {x:0.56,y:0.16},{x:0.60,y:0.19},{x:0.64,y:0.17}, // handle
+      ],
+      lines: [[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]],
+      brightness: []
+    },
+    // Leo - lion constellation, button width
+    leo: {
+      stars: [
+        {x:0.36,y:0.14},{x:0.39,y:0.10},{x:0.44,y:0.09},{x:0.50,y:0.11}, // sickle head
+        {x:0.43,y:0.16},{x:0.38,y:0.19}, // sickle bottom
+        {x:0.53,y:0.15},{x:0.59,y:0.20},{x:0.64,y:0.18},{x:0.61,y:0.13}, // body
+      ],
+      lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[3,6],[6,7],[7,8],[8,9],[9,6]],
+      brightness: []
+    }
+  };
+
+  // Initialize random phases for twinkling
+  Object.values(zodiacFigures).forEach(fig=>{
+    fig.stars.forEach((_,i)=>{
+      fig.brightness.push({phase:Math.random()*Math.PI*2,speed:0.5+Math.random()*1.5});
+    });
+  });
+
+  const figureNames = ['ursaMajor','leo'];
+  let currentFigIdx = 0;
+  let figureAlpha = 1; // 0..1 opacity for current figure
+  let lastSwitch = 0;
+  const figureDuration = 12000; // 12s per figure
+  const fadeDuration = 2000; // 2s fade transition
 
   let driftX=0, driftY=0;
 
@@ -417,9 +527,7 @@ const zodiacSVG={
     grd.addColorStop(0,'#0a0a1e');grd.addColorStop(0.5,'#0f0f23');grd.addColorStop(1,'#070714');
     ctx.fillStyle=grd;ctx.fillRect(0,0,w,h);
 
-    // Global drift (flying through space)
     driftX+=0.12;driftY+=0.06;
-
     stars.forEach(s=>{
       const twinkle=Math.sin(t*s.speed*1000+s.phase)*0.3+0.7;
       let sx=((s.x+driftX*s.dx*3)%w+w)%w;
@@ -428,74 +536,60 @@ const zodiacSVG={
       ctx.fillStyle='rgba(255,255,255,'+(s.a*twinkle)+')';ctx.fill();
     });
 
-    // Constellation (static, with smooth continuous glow trace)
-    // Build a continuous path of all line segments for smooth tracing
-    const totalSegs=cLines.length;
-    const traceSpeed=0.00025;
-    const tracePos=(t*traceSpeed)%totalSegs;
-    const trailLen=4; // how many segments the glow trail covers
-
-    // Draw all lines very dim
-    cLines.forEach(([a,b])=>{
-      ctx.strokeStyle='rgba(167,139,250,0.12)';ctx.lineWidth=0.8;
-      ctx.beginPath();ctx.moveTo(cPoints[a].x*w,cPoints[a].y*h);
-      ctx.lineTo(cPoints[b].x*w,cPoints[b].y*h);ctx.stroke();
-    });
-
-    // Draw glowing trail (smooth fade over several segments)
-    for(let i=0;i<totalSegs;i++){
-      // Distance from trace head (wrapping)
-      let dist=tracePos-i;
-      if(dist<0)dist+=totalSegs;
-      if(dist>trailLen)continue;
-
-      const [a,b]=cLines[i];
-      const brightness=Math.max(0,(trailLen-dist)/trailLen);
-      const alpha=brightness*0.55;
-
-      // Full segment or partial (for the head segment)
-      if(dist<1&&dist>=0){
-        // Head segment: partial draw
-        const frac=tracePos-Math.floor(tracePos);
-        const ex=cPoints[a].x+(cPoints[b].x-cPoints[a].x)*frac;
-        const ey=cPoints[a].y+(cPoints[b].y-cPoints[a].y)*frac;
-        ctx.strokeStyle='rgba(167,139,250,'+alpha+')';ctx.lineWidth=1.5;
-        ctx.beginPath();ctx.moveTo(cPoints[a].x*w,cPoints[a].y*h);
-        ctx.lineTo(ex*w,ey*h);ctx.stroke();
-      }else{
-        ctx.strokeStyle='rgba(167,139,250,'+alpha+')';ctx.lineWidth=1.5*brightness;
-        ctx.beginPath();ctx.moveTo(cPoints[a].x*w,cPoints[a].y*h);
-        ctx.lineTo(cPoints[b].x*w,cPoints[b].y*h);ctx.stroke();
-      }
+    // Figure switching logic
+    if(lastSwitch===0)lastSwitch=t;
+    const elapsed=t-lastSwitch;
+    let curAlpha=1, nextAlpha=0;
+    if(elapsed>figureDuration-fadeDuration){
+      const fadeProgress=(elapsed-(figureDuration-fadeDuration))/fadeDuration;
+      curAlpha=Math.max(0,1-fadeProgress);
+      nextAlpha=Math.min(1,fadeProgress);
+    }
+    if(elapsed>=figureDuration){
+      currentFigIdx=(currentFigIdx+1)%figureNames.length;
+      lastSwitch=t;
+      curAlpha=1;nextAlpha=0;
     }
 
-    // Draw star points with proximity-based glow
-    cPoints.forEach((p,i)=>{
-      // Find closest line to trace head
-      let minDist=totalSegs;
-      cLines.forEach(([a,b],li)=>{
-        if(a===i||b===i){
-          let d=tracePos-li;if(d<0)d+=totalSegs;
-          if(d<minDist)minDist=d;
-        }
-      });
-      const glow=minDist<trailLen?0.3+0.5*Math.max(0,(trailLen-minDist)/trailLen):0.25;
-      const sz=minDist<2?2.5:1.8;
-      ctx.beginPath();ctx.arc(p.x*w,p.y*h,sz,0,Math.PI*2);
-      ctx.fillStyle='rgba(167,139,250,'+glow+')';ctx.fill();
-      if(glow>0.4){
-        ctx.beginPath();ctx.arc(p.x*w,p.y*h,sz+5,0,Math.PI*2);
-        ctx.fillStyle='rgba(167,139,250,'+(glow*0.12)+')';ctx.fill();
-      }
-    });
+    const curFig=zodiacFigures[figureNames[currentFigIdx]];
+    const nextFig=zodiacFigures[figureNames[(currentFigIdx+1)%figureNames.length]];
 
-    // Shooting stars
-    if(Math.random()<0.003){
-      const sx2=Math.random()*w,sy2=Math.random()*h*0.5;
+    // Draw a zodiac figure
+    function drawFigure(fig, alpha){
+      if(alpha<=0)return;
+      // Draw lines (visible outline)
+      fig.lines.forEach(([a,b])=>{
+        ctx.strokeStyle='rgba(167,139,250,'+(0.25*alpha)+')';ctx.lineWidth=0.8;
+        ctx.beginPath();
+        ctx.moveTo(fig.stars[a].x*w,fig.stars[a].y*h);
+        ctx.lineTo(fig.stars[b].x*w,fig.stars[b].y*h);
+        ctx.stroke();
+      });
+      // Draw stars with individual twinkling
+      fig.stars.forEach((s,i)=>{
+        const bri=fig.brightness[i];
+        const twinkle=0.5+0.5*((Math.sin(t*0.001*bri.speed+bri.phase)+1)/2);
+        const starAlpha=twinkle*alpha;
+        const sz=1.5+twinkle*1.2;
+        // Star core - brighter
+        ctx.beginPath();ctx.arc(s.x*w,s.y*h,sz,0,Math.PI*2);
+        ctx.fillStyle='rgba(230,225,255,'+starAlpha+')';ctx.fill();
+        // Soft glow - bigger and brighter
+        ctx.beginPath();ctx.arc(s.x*w,s.y*h,sz+5,0,Math.PI*2);
+        ctx.fillStyle='rgba(167,139,250,'+starAlpha*0.25+')';ctx.fill();
+      });
+    }
+
+    drawFigure(curFig, curAlpha);
+    if(nextAlpha>0)drawFigure(nextFig, nextAlpha);
+
+    // Shooting stars (rare)
+    if(Math.random()<0.002){
+      const sx2=Math.random()*w,sy2=Math.random()*h*0.4;
       const angle=Math.PI*0.2+Math.random()*0.3,len=80+Math.random()*60;
       const grad=ctx.createLinearGradient(sx2,sy2,sx2+Math.cos(angle)*len,sy2+Math.sin(angle)*len);
-      grad.addColorStop(0,'rgba(167,139,250,0.8)');grad.addColorStop(1,'rgba(167,139,250,0)');
-      ctx.strokeStyle=grad;ctx.lineWidth=1.5;ctx.beginPath();
+      grad.addColorStop(0,'rgba(167,139,250,0.7)');grad.addColorStop(1,'rgba(167,139,250,0)');
+      ctx.strokeStyle=grad;ctx.lineWidth=1.2;ctx.beginPath();
       ctx.moveTo(sx2,sy2);ctx.lineTo(sx2+Math.cos(angle)*len,sy2+Math.sin(angle)*len);ctx.stroke();
     }
     requestAnimationFrame(draw);
@@ -534,8 +628,7 @@ async function devLogin(){
   try{
     const r=await fetch(API+'/auth/dev-login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
     if(!r.ok){const d=await r.json().catch(()=>({}));throw new Error(d.detail||'Login failed');}
-    const d=await r.json();
-    token=d.access_token;refreshToken=d.refresh_token;
+    const d=await r.json();token=d.access_token;refreshToken=d.refresh_token;
     localStorage.setItem('at',token);localStorage.setItem('rt',refreshToken);
     await loadProfile();showSection('horoscope');document.querySelector('.topbar').style.display='flex';
   }catch(e){notify(e.message,'error');}
@@ -568,7 +661,6 @@ async function api(p,m='GET',b=null){
   const o={method:m,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
   if(b)o.body=JSON.stringify(b);
   let r=await fetch(API+p,o);
-  // F4: On 401, try refreshing token before giving up
   if(r.status===401){
     const refreshed=await tryRefreshToken();
     if(refreshed){
@@ -646,6 +738,15 @@ function getTierBadge(tier){
   return map[tier]||map['free'];
 }
 
+function formatBirthTime(val){
+  if(!val)return '';
+  // Handle HH:MM:SS -> HH:MM
+  if(typeof val==='string'&&val.match(/^\d{1,2}:\d{2}(:\d{2})?$/)){
+    return val.split(':').slice(0,2).join(':');
+  }
+  return val;
+}
+
 async function loadMain(){
   if(!profile)await loadProfile();
   const sign=profile.zodiac_sign;
@@ -653,6 +754,14 @@ async function loadMain(){
   document.getElementById('user-greeting').textContent=profile.name||'Пользователь';
   document.getElementById('z-name').textContent=sign;
   document.getElementById('z-date').textContent=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+
+  // Avatar with cache busting - show zodiac emoji if no photo
+  const avatarEl=document.getElementById('user-avatar');
+  if(profile.avatar_url){
+    avatarEl.innerHTML='<img src="'+profile.avatar_url+'?t='+Date.now()+'" alt="avatar">';
+  }else{
+    avatarEl.innerHTML=zodiacEmoji[sign]||'&#128100;';
+  }
 
   // Tier badge
   const [tierLabel,tierClass]=getTierBadge(profile.subscription_tier);
@@ -746,6 +855,8 @@ async function feedback(t){
   try{
     await api('/horoscope/'+curHoroId+'/feedback','POST',{feedback:t});
     document.getElementById('btn-like').disabled=true;document.getElementById('btn-dislike').disabled=true;
+    if(t==='like')document.getElementById('btn-like').classList.add('liked');
+    else document.getElementById('btn-dislike').classList.add('disliked');
     notify(t==='like'?'Спасибо за отзыв!':'Учтем, спасибо!','success');
   }catch(e){notify(e.message,'error');}
 }
@@ -756,11 +867,10 @@ async function loadHistory(){
     const d=await api('/horoscope/history');
     const el=document.getElementById('hist-list');
     if(!d.horoscopes.length){el.innerHTML='<div class="card center txt2">Пока нет гороскопов</div>';return;}
-    // V1 FIX: Escape horoscope text in history to prevent XSS
     el.innerHTML=d.horoscopes.map(h=>{
       const fb=h.feedback==='like'?'&#128077;':h.feedback==='dislike'?'&#128078;':'';
       const ic=h.horoscope_type==='focused'?'&#127919;':'&#128302;';
-      return '<div class="card"><div class="flex mb8" style="justify-content:space-between;"><span>'+ic+' '+esc(h.horoscope_date)+'</span><span>'+fb+'</span></div><div class="horo-text" style="font-size:0.92rem;">'+esc(h.horoscope_text.substring(0,200))+'...</div></div>';
+      return '<div class="card"><div class="flex mb8" style="justify-content:space-between;"><span>'+ic+' '+h.horoscope_date+'</span><span>'+fb+'</span></div><div class="horo-text" style="font-size:0.92rem;">'+h.horoscope_text.substring(0,200)+'...</div></div>';
     }).join('');
   }catch(e){notify(e.message,'error');}
 }
@@ -769,31 +879,235 @@ async function loadHistory(){
 async function loadFamily(){
   try{
     const members=await api('/profile/family');
-    // V1 FIX: Use esc() to prevent XSS via family member names
     const el=document.getElementById('fam-list');
-    el.innerHTML=members.map(m=>'<div class="card"><div class="gold">'+esc(m.name)+'</div><div class="txt2">'+esc(m.relation)+' &middot; '+esc(m.zodiac_sign)+' &middot; '+esc(m.birth_date)+'</div><button class="btn btn-sec btn-sm mt16" onclick="genHoroFor(\''+esc(m.id)+'\')">&#128302; Гороскоп</button></div>').join('');
-    const lim=await api('/horoscope/limits');
-    document.getElementById('fam-add').style.display=lim.family_members_limit>0?'block':'none';
-    const sel=document.getElementById('fam-rel');
-    if(sel.options.length<=1){
-      const opts=await api('/profile/options');
-      (opts.relations||[]).forEach(r=>{const o=document.createElement('option');o.value=r.value;o.textContent=r.label_ru;sel.appendChild(o);});
+    function getRelLabel(relation,memberGender){
+      const map={spouse:memberGender==='female'?'Жена':'Муж',partner:memberGender==='female'?'Девушка':'Молодой человек',child:'Ребёнок',parent:'Родитель',sibling:memberGender==='female'?'Сестра':'Брат'};
+      return map[relation]||relation;
     }
+    if(members.length){
+      el.innerHTML=members.map(m=>{
+        const relName=getRelLabel(m.relation,m.gender);
+        return '<div class="card">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+            '<div><span class="gold" style="font-size:1.05rem;">'+esc(m.name)+'</span><span class="txt2">, '+esc(relName)+'</span></div>'+
+            '<div style="display:flex;gap:6px;">'+
+              '<span style="cursor:pointer;font-size:1.1rem;color:var(--neon);padding:4px 10px;border-radius:8px;background:rgba(167,139,250,0.12);" onclick="editFamily(\''+m.id+'\')">&#9998;</span>'+
+              '<span style="cursor:pointer;font-size:1.1rem;color:#fff;padding:4px 10px;border-radius:8px;background:rgba(255,255,255,0.1);" onclick="deleteFamily(\''+m.id+'\')">&times;</span>'+
+            '</div>'+
+          '</div>'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+            '<span class="txt2" style="font-size:0.85rem;">'+m.birth_date+' &middot; '+m.zodiac_sign+'</span>'+
+            '<button class="btn btn-sec btn-sm" onclick="genHoroFor(\''+m.id+'\')" style="margin:0;padding:6px 14px;">&#128302; Получить гороскоп</button>'+
+          '</div>'+
+          '<div id="fam-horo-'+m.id+'"></div>'+
+        '</div>';
+      }).join('');
+    }else{
+      el.innerHTML='<div class="card center txt2">Пока никто не добавлен</div>';
+    }
+    const lim=await api('/horoscope/limits');
+    const limit=lim.family_members_limit||0;
+    const canAdd=limit>0&&members.length<limit;
+    const addDiv=document.getElementById('fam-add');
+    addDiv.style.display='block';
+    if(canAdd){
+      addDiv.innerHTML='<div class="txt2 mb8" style="font-size:0.82rem;">'+members.length+' из '+limit+'</div><button class="btn btn-sec btn-sm" onclick="showAddFamily()" style="padding:8px 16px;">+ Добавить</button>';
+    }else{
+      // limit reached or 0: show add button that leads to subscription
+      addDiv.innerHTML='<div class="tooltip-wrap" style="display:inline-block;"><button class="btn btn-sec btn-sm" onclick="notify(&quot;Достигнут лимит. Оформи подписку для расширения&quot;,&quot;info&quot;);showSection(&quot;subscription&quot;)" style="padding:8px 16px;">+ Добавить</button><span class="tooltip-text">Подключи подписку и получай персональные гороскопы для твоих близких каждый день</span></div>';
+    }
+    // Gender-dependent relation labels
+    const sel=document.getElementById('fam-rel');
+    sel.innerHTML='<option value="">Выбери</option>';
+    const userIsMale=profile&&profile.gender==='male';
+    const relations=[
+      {value:'spouse',label:userIsMale?'Жена':'Муж'},
+      {value:'partner',label:userIsMale?'Девушка':'Молодой человек'},
+      {value:'child',label:'Ребёнок'},
+      {value:'parent',label:'Родитель'},
+      {value:'sibling',label:userIsMale?'Брат':'Сестра'},
+      {value:'sibling',label:userIsMale?'Сестра':'Брат'},
+    ];
+    relations.forEach(r=>{const o=document.createElement('option');o.value=r.value;o.textContent=r.label;sel.appendChild(o);});
   }catch(e){notify(e.message,'error');}
 }
-function showAddFamily(){document.getElementById('fam-form').style.display='block';}
-function hideAddFamily(){document.getElementById('fam-form').style.display='none';}
+function initFamBirthDatePicker(dateStr){
+  const yearSel=document.getElementById('fam-birth-year');
+  const monthSel=document.getElementById('fam-birth-month');
+  const daySel=document.getElementById('fam-birth-day');
+  let y=2000,m=1,d=1;
+  if(dateStr){const p=dateStr.split('-');y=parseInt(p[0]);m=parseInt(p[1]);d=parseInt(p[2]);}
+  yearSel.innerHTML='';
+  for(let i=2024;i>=1920;i--){
+    const o=document.createElement('option');o.value=i;o.textContent=i;
+    if(i===y)o.selected=true;
+    yearSel.appendChild(o);
+  }
+  monthSel.innerHTML='';
+  monthNames.forEach((name,i)=>{
+    const o=document.createElement('option');o.value=i+1;o.textContent=name;
+    if(i+1===m)o.selected=true;
+    monthSel.appendChild(o);
+  });
+  updateFamBirthDays(d);
+}
+function updateFamBirthDays(selectDay){
+  const y=parseInt(document.getElementById('fam-birth-year').value)||2000;
+  const m=parseInt(document.getElementById('fam-birth-month').value)||1;
+  const daysInMonth=new Date(y,m,0).getDate();
+  const daySel=document.getElementById('fam-birth-day');
+  const curDay=selectDay||parseInt(daySel.value)||1;
+  daySel.innerHTML='';
+  for(let i=1;i<=daysInMonth;i++){
+    const o=document.createElement('option');o.value=i;o.textContent=i;
+    if(i===Math.min(curDay,daysInMonth))o.selected=true;
+    daySel.appendChild(o);
+  }
+  syncFamBirthDate();
+}
+function syncFamBirthDate(){
+  const y=document.getElementById('fam-birth-year').value;
+  const m=String(document.getElementById('fam-birth-month').value).padStart(2,'0');
+  const d=String(document.getElementById('fam-birth-day').value).padStart(2,'0');
+  document.getElementById('fam-birth').value=y+'-'+m+'-'+d;
+}
+
+function showAddFamily(){
+  document.getElementById('fam-form').style.display='block';
+  document.getElementById('fam-add').style.display='none';
+  document.getElementById('fam-submit-btn').textContent='Добавить';
+  initFamBirthDatePicker(null);
+}
+function hideAddFamily(){
+  document.getElementById('fam-form').style.display='none';
+  document.getElementById('fam-add').style.display='block';
+  editingFamilyId=null;
+  document.getElementById('fam-name').value='';
+  document.getElementById('fam-birth').value='';
+  document.getElementById('fam-rel').selectedIndex=0;
+  famGenderVal='';
+  document.getElementById('fam-gender-row').style.display='flex';
+  document.getElementById('fam-gender-auto').style.display='none';
+  document.getElementById('fam-m').style.borderColor='';
+  document.getElementById('fam-f').style.borderColor='';
+  document.querySelector('#fam-form h2').textContent='Добавь близкого тебе человека';
+}
 function famGender(g){famGenderVal=g;document.getElementById('fam-m').style.borderColor=g==='male'?'var(--neon)':'';document.getElementById('fam-f').style.borderColor=g==='female'?'var(--neon)':'';}
 
+// Auto-set gender based on relation
+const relationGenderMap={};
+function onRelationChange(){
+  const rel=document.getElementById('fam-rel');
+  const selText=rel.options[rel.selectedIndex]?.textContent||'';
+  // Map relation labels to gender
+  const femaleRels=['Жена','Девушка','Сестра','Мама'];
+  const maleRels=['Муж','Молодой человек','Брат','Папа'];
+  if(femaleRels.some(r=>selText===r)){
+    famGenderVal='female';
+    document.getElementById('fam-gender-row').style.display='none';
+    document.getElementById('fam-gender-auto').style.display='flex';
+    document.getElementById('fam-gender-label').innerHTML='&#9792; Женский';
+  }else if(maleRels.some(r=>selText===r)){
+    famGenderVal='male';
+    document.getElementById('fam-gender-row').style.display='none';
+    document.getElementById('fam-gender-auto').style.display='flex';
+    document.getElementById('fam-gender-label').innerHTML='&#9794; Мужской';
+  }else{
+    // Ребёнок, Родитель - manual selection
+    famGenderVal='';
+    document.getElementById('fam-gender-row').style.display='flex';
+    document.getElementById('fam-gender-auto').style.display='none';
+    document.getElementById('fam-m').style.borderColor='';
+    document.getElementById('fam-f').style.borderColor='';
+  }
+}
+
+let editingFamilyId=null;
+
 async function addFamily(){
-  if(!famGenderVal||!document.getElementById('fam-name').value||!document.getElementById('fam-birth').value||!document.getElementById('fam-rel').value){notify('Заполни все поля','error');return;}
+  syncFamBirthDate();
+  const name=document.getElementById('fam-name').value.trim();
+  const rel=document.getElementById('fam-rel').value;
+  const birth=document.getElementById('fam-birth').value;
+  if(!name){notify('Введи имя','error');return;}
+  if(!rel){notify('Выбери кого добавляешь','error');return;}
+  if(!birth){notify('Укажи дату рождения','error');return;}
+  // Validate date is not in the future
+  if(new Date(birth)>new Date()){notify('Введите правильную дату','error');return;}
+  if(!famGenderVal){notify('Выбери пол','error');return;}
+
   try{
-    await api('/profile/family','POST',{name:document.getElementById('fam-name').value,relation:document.getElementById('fam-rel').value,birth_date:document.getElementById('fam-birth').value,gender:famGenderVal});
-    hideAddFamily();loadFamily();notify('Член семьи добавлен!','success');
+    if(editingFamilyId){
+      // Update existing
+      await api('/profile/family/'+editingFamilyId,'PATCH',{name:name,relation:rel,birth_date:birth,gender:famGenderVal});
+      editingFamilyId=null;
+      notify('Данные обновлены!','success');
+    }else{
+      await api('/profile/family','POST',{name:name,relation:rel,birth_date:birth,gender:famGenderVal});
+      notify('Член семьи добавлен!','success');
+    }
+    hideAddFamily();loadFamily();
   }catch(e){notify(e.message,'error');}
 }
+
+function editFamily(mid){
+  editingFamilyId=mid;
+  document.getElementById('fam-form').style.display='block';
+  document.getElementById('fam-add').style.display='none';
+  document.getElementById('fam-submit-btn').textContent='Обновить';
+  document.querySelector('#fam-form h2').textContent='Редактирование';
+  // Populate form from API
+  api('/profile/family').then(members=>{
+    const m=members.find(x=>x.id===mid);
+    if(!m)return;
+    document.getElementById('fam-name').value=m.name;
+    initFamBirthDatePicker(m.birth_date);
+    // Set relation
+    const sel=document.getElementById('fam-rel');
+    for(let i=0;i<sel.options.length;i++){
+      if(sel.options[i].value===m.relation){sel.selectedIndex=i;break;}
+    }
+    famGenderVal=m.gender;
+    onRelationChange();
+  });
+}
+
+let pendingDeleteId=null;
+function deleteFamily(mid){
+  pendingDeleteId=mid;
+  document.getElementById('confirm-modal').classList.add('open');
+  document.getElementById('confirm-yes').onclick=async function(){
+    try{
+      await api('/profile/family/'+pendingDeleteId,'DELETE');
+      closeConfirmModal();loadFamily();notify('Удалено','success');
+    }catch(e){closeConfirmModal();notify(e.message,'error');}
+  };
+}
+function closeConfirmModal(){
+  document.getElementById('confirm-modal').classList.remove('open');
+  pendingDeleteId=null;
+}
+
 async function genHoroFor(mid){
-  try{await api('/horoscope/generate','POST',{family_member_id:mid});notify('Гороскоп создан!','success');}catch(e){notify(e.message,'error');}
+  const btn=event?.target;
+  if(btn){btn.disabled=true;btn.textContent='Генерация...';}
+  try{
+    // Free users need ad first
+    if(profile&&profile.subscription_tier==='free'){
+      const adOk=await ensureAdViewed();
+      if(!adOk){if(btn){btn.disabled=false;btn.innerHTML='&#128302; Получить гороскоп';}return;}
+    }
+    const h=await api('/horoscope/generate','POST',{horoscope_type:'general',family_member_id:mid});
+    if(h){
+      // Show horoscope text inside the member card
+      const horoDiv=document.getElementById('fam-horo-'+mid);
+      if(horoDiv){
+        horoDiv.innerHTML='<div class="horo-text" style="font-size:0.9rem;margin-top:8px;padding-top:8px;border-top:1px solid var(--elev);">'+h.horoscope_text+'</div>';
+      }
+      notify('Гороскоп готов!','success');
+    }
+  }catch(e){notify(e.message,'error');}
+  if(btn){btn.disabled=false;btn.innerHTML='&#128302; Получить гороскоп';}
 }
 
 // Profile
@@ -801,82 +1115,251 @@ async function loadProfile(){
   profile=await api('/profile/me');
   try{const o=await api('/profile/options');catalog=o.interests||[];}catch(e){}
 }
+let profileEditMode=false;
+
 function loadProfileScreen(){
   if(!profile)return;
-  document.getElementById('p-zodiac').innerHTML=zodiacSVG[profile.zodiac_sign]?'<span class="zodiac-anim" style="width:48px;height:48px;display:inline-block;">'+zodiacSVG[profile.zodiac_sign]+'</span>':'';
-  document.getElementById('p-name').textContent=profile.name;
+  profileEditMode=false;
+
+  // Avatar with cache busting
+  const avatarImg=document.getElementById('p-avatar-img');
+  const avatarPlaceholder=document.getElementById('p-avatar-placeholder');
+  if(profile.avatar_url){
+    avatarImg.src=profile.avatar_url+'?t='+Date.now();avatarImg.style.display='block';avatarPlaceholder.style.display='none';
+  }else{
+    avatarImg.style.display='none';avatarPlaceholder.style.display='block';
+  }
+
+  // Zodiac sign - purple animated (top card only shows avatar + zodiac)
+  document.getElementById('p-zodiac').innerHTML=zodiacSVG[profile.zodiac_sign]?'<span class="zodiac-3d">'+zodiacSVG[profile.zodiac_sign]+'</span>':'';
   document.getElementById('p-sign').textContent=profile.zodiac_sign;
-  document.getElementById('p-birth').textContent=profile.birth_date;
 
-  // UI FIX: Show "Не заполнено" for empty fields with clickable styling
-  setFieldOrEmpty(document.getElementById('pv-time'), profile.birth_time||'');
-  setFieldOrEmpty(document.getElementById('pv-place'), profile.birth_place||'');
-  setFieldOrEmpty(document.getElementById('pv-prof'), profile.profession||'');
-  setFieldOrEmpty(document.getElementById('pv-email'), profile.email||'');
+  // Gender display (non-editable)
+  const genderSymbol=profile.gender==='male'?'&#9794; Мужской':'&#9792; Женский';
+  document.getElementById('ed-gender').innerHTML=genderSymbol;
 
-  // Hide field editor when loading
-  document.getElementById('field-editor').style.display='none';
-  editingField=null;
+  // Init date picker dropdowns
+  initBirthDatePicker(profile.birth_date);
 
-  document.getElementById('int-tags').innerHTML=catalog.map(i=>{
-    const s=(profile.interests||[]).includes(i.id)?'sel':'';
-    return '<span class="tag '+s+'" data-id="'+esc(i.id)+'" onclick="this.classList.toggle(\'sel\')">'+(i.icon?esc(i.icon):'')+' '+esc(i.label_ru)+'</span>';
+  // Fields - read-only by default
+  document.getElementById('ed-name').value=profile.name||'';
+  document.getElementById('ed-time').value=formatBirthTime(profile.birth_time)||'';
+  document.getElementById('ed-place').value=profile.birth_place||'';
+  document.getElementById('ed-prof').value=profile.profession||'';
+  document.getElementById('ed-email').value=profile.email||'';
+  setProfileFieldsDisabled(true);
+
+  // Interests - show only selected
+  const selected=(profile.interests||[]);
+  const selectedItems=catalog.filter(i=>selected.includes(i.id));
+  if(selectedItems.length){
+    document.getElementById('int-tags-display').innerHTML=selectedItems.map(i=>'<span class="tag sel">'+(i.icon||'')+' '+i.label_ru+'</span>').join('');
+  }else{
+    document.getElementById('int-tags-display').innerHTML='<span class="txt2">Интересы не выбраны</span>';
+  }
+}
+
+function setProfileFieldsDisabled(disabled){
+  ['ed-name','ed-birth-day','ed-birth-month','ed-birth-year','ed-time','ed-place','ed-prof','ed-email'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.disabled=disabled;
+  });
+  document.getElementById('profile-save-area').style.display=disabled?'none':'block';
+  document.getElementById('btn-edit-profile').innerHTML=disabled?'&#9998; Изменить':'&#10005; Отмена';
+}
+
+function toggleEditProfile(){
+  profileEditMode=!profileEditMode;
+  setProfileFieldsDisabled(!profileEditMode);
+}
+
+// Birth time auto-format: 1430 -> 14:30
+document.addEventListener('input',function(e){
+  if(e.target.id==='ed-time'){
+    let v=e.target.value.replace(/[^0-9]/g,'');
+    if(v.length>4)v=v.slice(0,4);
+    if(v.length>=3){
+      v=v.slice(0,v.length-2)+':'+v.slice(v.length-2);
+    }
+    e.target.value=v;
+  }
+});
+
+async function uploadAvatar(input){
+  if(!input.files||!input.files[0])return;
+  const file=input.files[0];
+  if(file.size>1024*1024){notify('Файл слишком большой (макс. 1 МБ)','error');return;}
+  const allowed=['image/jpeg','image/png','image/webp','image/gif'];
+  if(!allowed.includes(file.type)){notify('Допустимы только JPEG, PNG, WebP, GIF','error');return;}
+
+  const loader=document.getElementById('avatar-loader');
+  const circle=document.getElementById('avatar-progress-circle');
+  const circumference=314; // 2*PI*50
+  loader.classList.add('active');
+  circle.style.strokeDashoffset=circumference;
+
+  const fd=new FormData();fd.append('file',file);
+  try{
+    const xhr=new XMLHttpRequest();
+    const result=await new Promise((resolve,reject)=>{
+      xhr.upload.addEventListener('progress',e=>{
+        if(e.lengthComputable){
+          const pct=e.loaded/e.total;
+          circle.style.strokeDashoffset=circumference*(1-pct);
+        }
+      });
+      xhr.addEventListener('load',()=>{
+        if(xhr.status>=200&&xhr.status<300){
+          resolve(JSON.parse(xhr.responseText));
+        }else{
+          try{reject(new Error(JSON.parse(xhr.responseText).detail));}
+          catch(e2){reject(new Error('Ошибка загрузки'));}
+        }
+      });
+      xhr.addEventListener('error',()=>reject(new Error('Ошибка сети')));
+      xhr.open('POST',API+'/profile/me/avatar');
+      xhr.setRequestHeader('Authorization','Bearer '+token);
+      xhr.send(fd);
+    });
+
+    // Cache busting: append timestamp
+    const avatarUrl=result.avatar_url+'?t='+Date.now();
+    profile.avatar_url=result.avatar_url;
+    const img=document.getElementById('p-avatar-img');
+    img.src=avatarUrl;
+    img.style.display='block';
+    document.getElementById('p-avatar-placeholder').style.display='none';
+
+    // Also update horoscope screen avatar
+    const horoAvatar=document.getElementById('user-avatar');
+    if(horoAvatar)horoAvatar.innerHTML='<img src="'+avatarUrl+'" alt="avatar">';
+
+    notify('Аватар обновлен!','success');
+  }catch(e){notify(e.message,'error');}
+  finally{
+    setTimeout(()=>{loader.classList.remove('active');},500);
+  }
+  input.value=''; // reset file input
+}
+
+function openInterestsModal(){
+  const selected=(profile.interests||[]);
+  // Sort: selected first, then the rest
+  const sorted=[...catalog].sort((a,b)=>{
+    const aS=selected.includes(a.id)?0:1;
+    const bS=selected.includes(b.id)?0:1;
+    return aS-bS;
+  });
+  document.getElementById('int-tags-edit').innerHTML=sorted.map(i=>{
+    const s=selected.includes(i.id)?'sel':'';
+    return '<span class="tag '+s+'" data-id="'+i.id+'" onclick="this.classList.toggle(\'sel\')">'+(i.icon||'')+' '+i.label_ru+'</span>';
   }).join('');
+  document.getElementById('interests-modal').classList.add('open');
 }
 
-// Field editor logic
-const fieldConfig={
-  birth_time:{label:'Время рождения',type:'time',key:'birth_time',placeholder:'14:30'},
-  birth_place:{label:'Место рождения',type:'text',key:'birth_place',placeholder:'Москва'},
-  profession:{label:'Профессия',type:'text',key:'profession',placeholder:'Дизайнер'},
-  email:{label:'Email',type:'email',key:'email',placeholder:'ivan@example.com'}
-};
-
-function openFieldEditor(field){
-  const cfg=fieldConfig[field];if(!cfg)return;
-  editingField=field;
-  document.getElementById('fe-title').textContent=cfg.label;
-  const inp=document.getElementById('fe-input');
-  inp.type=cfg.type;inp.placeholder=cfg.placeholder;
-  // Pre-fill with current value
-  const val=profile[cfg.key]||'';
-  inp.value=val;
-  document.getElementById('fe-clear-btn').style.display=val?'inline-block':'none';
-  document.getElementById('field-editor').style.display='block';
-  inp.focus();
-}
-
-function cancelFieldEdit(){
-  document.getElementById('field-editor').style.display='none';
-  editingField=null;
-}
-
-async function saveFieldEdit(){
-  if(!editingField)return;
-  const cfg=fieldConfig[editingField];
-  const val=document.getElementById('fe-input').value.trim();
-  const body={};body[cfg.key]=val||'';
-  try{
-    profile=await api('/profile/me','PATCH',body);
-    notify('Сохранено!','success');
-    cancelFieldEdit();loadProfileScreen();
-  }catch(e){notify(e.message,'error');}
-}
-
-async function clearFieldEdit(){
-  if(!editingField)return;
-  const cfg=fieldConfig[editingField];
-  const body={};body[cfg.key]='';
-  try{
-    profile=await api('/profile/me','PATCH',body);
-    notify('Поле очищено','success');
-    cancelFieldEdit();loadProfileScreen();
-  }catch(e){notify(e.message,'error');}
+function closeInterestsModal(){
+  document.getElementById('interests-modal').classList.remove('open');
 }
 
 async function saveInterests(){
-  const ints=Array.from(document.querySelectorAll('#int-tags .sel')).map(t=>t.dataset.id);
-  try{profile=await api('/profile/me','PATCH',{interests:ints});notify('Интересы сохранены!','success');loadProfileScreen();}catch(e){notify(e.message,'error');}
+  const ints=Array.from(document.querySelectorAll('#int-tags-edit .sel')).map(t=>t.dataset.id);
+  try{
+    profile=await api('/profile/me','PATCH',{interests:ints});
+    notify('Интересы сохранены!','success');
+    closeInterestsModal();
+    loadProfileScreen();
+  }catch(e){notify(e.message,'error');}
+}
+
+// Date picker helpers
+const monthNames=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+function initBirthDatePicker(dateStr){
+  const yearSel=document.getElementById('ed-birth-year');
+  const monthSel=document.getElementById('ed-birth-month');
+  const daySel=document.getElementById('ed-birth-day');
+  // Parse existing date
+  let y=1990,m=1,d=1;
+  if(dateStr){const p=dateStr.split('-');y=parseInt(p[0]);m=parseInt(p[1]);d=parseInt(p[2]);}
+  // Populate years (1920-2020, scroll to selected or 1990)
+  yearSel.innerHTML='';
+  for(let i=2020;i>=1920;i--){
+    const o=document.createElement('option');o.value=i;o.textContent=i;
+    if(i===y)o.selected=true;
+    yearSel.appendChild(o);
+  }
+  // Populate months
+  monthSel.innerHTML='';
+  monthNames.forEach((name,i)=>{
+    const o=document.createElement('option');o.value=i+1;o.textContent=name;
+    if(i+1===m)o.selected=true;
+    monthSel.appendChild(o);
+  });
+  // Populate days
+  updateBirthDays(d);
+}
+function updateBirthDays(selectDay){
+  const y=parseInt(document.getElementById('ed-birth-year').value)||1990;
+  const m=parseInt(document.getElementById('ed-birth-month').value)||1;
+  const daysInMonth=new Date(y,m,0).getDate();
+  const daySel=document.getElementById('ed-birth-day');
+  const curDay=selectDay||parseInt(daySel.value)||1;
+  daySel.innerHTML='';
+  for(let i=1;i<=daysInMonth;i++){
+    const o=document.createElement('option');o.value=i;o.textContent=i;
+    if(i===Math.min(curDay,daysInMonth))o.selected=true;
+    daySel.appendChild(o);
+  }
+  // Update hidden field
+  syncBirthDate();
+}
+function syncBirthDate(){
+  const y=document.getElementById('ed-birth-year').value;
+  const m=String(document.getElementById('ed-birth-month').value).padStart(2,'0');
+  const d=String(document.getElementById('ed-birth-day').value).padStart(2,'0');
+  document.getElementById('ed-birthdate').value=y+'-'+m+'-'+d;
+}
+
+async function saveProfile(){
+  const b={};
+  const v=id=>document.getElementById(id).value.trim();
+  // Frontend validation - required fields can't be empty
+  const name=v('ed-name');
+  if(!name||name.length<2){notify('Имя обязательно (минимум 2 символа)','error');return;}
+  if(name.length>50){notify('Имя: максимум 50 символов','error');return;}
+  b.name=name;
+
+  syncBirthDate();
+  const birthDate=v('ed-birthdate');
+  if(!birthDate){notify('Дата рождения обязательна','error');return;}
+  b.birth_date=birthDate;
+
+  // Optional fields - empty = clear, non-empty = validate
+  const place=v('ed-place');
+  if(place&&place.length>50){notify('Город: максимум 50 символов','error');return;}
+  b.birth_place=place||'';
+
+  const prof=v('ed-prof');
+  if(prof&&prof.length>50){notify('Профессия: максимум 50 символов','error');return;}
+  b.profession=prof||'';
+
+  const email=v('ed-email');
+  if(email){
+    if(email.length>50){notify('Email: максимум 50 символов','error');return;}
+    if(!email.match(/^[^@]+@[^@]+\.[^@]+$/)){notify('Некорректный email','error');return;}
+  }
+  b.email=email||'';
+  const timeVal=v('ed-time');
+  if(timeVal){
+    let formatted=timeVal.replace(/[^0-9:]/g,'');
+    if(formatted.match(/^\d{3,4}$/)&&!formatted.includes(':')){
+      formatted=formatted.slice(0,formatted.length-2)+':'+formatted.slice(formatted.length-2);
+    }
+    b.birth_time=formatted;
+  }
+  try{
+    profile=await api('/profile/me','PATCH',b);
+    notify('Профиль сохранен!','success');
+    loadProfileScreen();
+  }catch(e){notify(e.message,'error');}
 }
 
 // Tiers

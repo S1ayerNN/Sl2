@@ -4,10 +4,13 @@ PII is encrypted in DB and decrypted only when returning to the authenticated us
 Interests are selected from a predefined list only - no free text input.
 """
 
+import os
 import re
+import uuid as uuid_mod
 from datetime import date, time
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
@@ -99,6 +102,17 @@ async def update_my_profile(
             )
         current_user.name_encrypted = encrypt_pii(name)
 
+    if update_data.birth_date is not None:
+        try:
+            new_birth_date = date.fromisoformat(update_data.birth_date)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid date format. Use YYYY-MM-DD",
+            )
+        current_user.birth_date = new_birth_date
+        current_user.zodiac_sign = get_zodiac_sign(new_birth_date)
+
     if update_data.birth_time is not None:
         # Q2 FIX: Allow empty string to clear birth_time
         if update_data.birth_time.strip() == "":
@@ -119,16 +133,19 @@ async def update_my_profile(
 
     if update_data.birth_place is not None:
         place = update_data.birth_place.strip()
-        if len(place) > 200:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Birth place must be under 200 characters",
-            )
-        current_user.birth_place_encrypted = encrypt_pii(place) if place else None
+        if not place:
+            current_user.birth_place_encrypted = None
+        else:
+            if len(place) > 200:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Birth place must be under 200 characters",
+                )
+            current_user.birth_place_encrypted = encrypt_pii(place)
 
     if update_data.email is not None:
         email = update_data.email.strip().lower()
-        if email == "":
+        if not email:
             current_user.email_encrypted = None
             current_user.email_hash = None
         else:
@@ -240,14 +257,14 @@ async def add_family_member(
     current_count = len(current_user.family_members) if current_user.family_members else 0
 
     if current_count >= limit:
-        if not current_user.is_premium:
+        if limit == 0:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Family members available only for premium subscribers",
+                detail="Family members available only for paid subscribers",
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Maximum {limit} family members allowed",
+            detail=f"Maximum {limit} family members allowed for your subscription tier",
         )
 
     # Validate enums
@@ -293,6 +310,66 @@ async def add_family_member(
     return FamilyMemberResponse(
         id=member.id,
         name=name,
+        relation=member.relation,
+        birth_date=member.birth_date,
+        birth_time=member.birth_time,
+        gender=member.gender,
+        zodiac_sign=member.zodiac_sign,
+        interests=member.interests or [],
+        created_at=member.created_at,
+    )
+
+
+@router.patch("/family/{member_id}", response_model=FamilyMemberResponse)
+async def update_family_member(
+    member_id: UUID,
+    data: FamilyMemberUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a family member profile."""
+    result = await db.execute(
+        select(FamilyMember)
+        .where(FamilyMember.id == member_id)
+        .where(FamilyMember.owner_id == current_user.id)
+    )
+    member = result.scalar_one_or_none()
+    if member is None:
+        raise HTTPException(status_code=404, detail="Family member not found")
+
+    if data.name is not None:
+        name = data.name.strip()
+        if len(name) < 2 or len(name) > 100:
+            raise HTTPException(status_code=400, detail="Name must be 2-100 characters")
+        member.name_encrypted = encrypt_pii(name)
+
+    if data.relation is not None:
+        if data.relation not in [r.value for r in FamilyRelation]:
+            raise HTTPException(status_code=400, detail="Invalid relation")
+        member.relation = data.relation
+
+    if data.birth_date is not None:
+        birth_date = date.fromisoformat(data.birth_date)
+        member.birth_date = birth_date
+        member.zodiac_sign = get_zodiac_sign(birth_date)
+
+    if data.gender is not None:
+        if data.gender not in [g.value for g in Gender]:
+            raise HTTPException(status_code=400, detail="Invalid gender")
+        member.gender = data.gender
+
+    if data.birth_time is not None:
+        h, m = map(int, data.birth_time.split(":"))
+        member.birth_time = time(h, m)
+
+    if data.interests is not None:
+        member.interests = validate_interest_ids(data.interests)
+
+    await db.flush()
+
+    return FamilyMemberResponse(
+        id=member.id,
+        name=decrypt_pii(member.name_encrypted),
         relation=member.relation,
         birth_date=member.birth_date,
         birth_time=member.birth_time,
@@ -394,6 +471,93 @@ async def update_family_member(
         interests=member.interests or [],
         created_at=member.created_at,
     )
+
+
+# --- Avatar Upload ---
+
+AVATAR_UPLOAD_DIR = Path("/app/uploads/avatars")
+AVATAR_MAX_SIZE = 1 * 1024 * 1024  # 1 MB
+AVATAR_ALLOWED_MIMES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+AVATAR_ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+
+
+@router.post("/me/avatar")
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Upload user avatar image.
+
+    Validates:
+    - File extension (jpg, png, webp, gif)
+    - MIME type (image/jpeg, image/png, image/webp, image/gif)
+    - File size (max 1 MB)
+    """
+    # Validate MIME type
+    if file.content_type not in AVATAR_ALLOWED_MIMES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file type: {file.content_type}. Allowed: JPEG, PNG, WebP, GIF",
+        )
+
+    # Validate extension
+    ext = Path(file.filename).suffix.lower() if file.filename else ""
+    if ext not in AVATAR_ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file extension: {ext}. Allowed: {', '.join(AVATAR_ALLOWED_EXTENSIONS)}",
+        )
+
+    # Read and validate size
+    contents = await file.read()
+    if len(contents) > AVATAR_MAX_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large: {len(contents)} bytes. Maximum: {AVATAR_MAX_SIZE} bytes (1 MB)",
+        )
+
+    if len(contents) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empty file",
+        )
+
+    # Compress and resize avatar (max 300x300, JPEG quality 85)
+    try:
+        from PIL import Image
+        import io
+        img = Image.open(io.BytesIO(contents))
+        # Convert to RGB if needed (e.g. PNG with alpha)
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+        # Resize if larger than 300x300
+        max_size = (300, 300)
+        if img.width > max_size[0] or img.height > max_size[1]:
+            img.thumbnail(max_size, Image.LANCZOS)
+        # Save as optimized JPEG
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG', quality=85, optimize=True)
+        contents = buf.getvalue()
+        ext = '.jpg'
+    except ImportError:
+        pass  # Pillow not installed, save original
+    except Exception:
+        pass  # If image processing fails, save original
+
+    # Save file
+    AVATAR_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{current_user.id}{ext}"
+    filepath = AVATAR_UPLOAD_DIR / filename
+    with open(filepath, "wb") as f:
+        f.write(contents)
+
+    # Update user avatar URL
+    avatar_url = f"/uploads/avatars/{filename}"
+    current_user.avatar_url = avatar_url
+    await db.flush()
+
+    return {"avatar_url": avatar_url}
 
 
 # --- Subscription Tiers ---
