@@ -5,14 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MyAstro</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<!-- Yandex RTB SDK -->
-<script>window.yaContextCb=window.yaContextCb||[];</script>
-<script src="https://yandex.ru/ads/system/context.js" async></script>
 <style>
 :root{--bg:#0f0f23;--card:#1a1a2e;--elev:#232342;--gold:#e2b714;--purple:#7b2ff7;--neon:#a78bfa;--blue:#4361ee;--txt:#f5f5f5;--txt2:#8b8b9e;--ok:#06d6a0;--err:#ef476f}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;max-width:520px;margin:0 auto;padding:0 4px}
-.screen{display:none;padding:16px;padding-top:60px;padding-bottom:80px;min-height:100vh}
+.screen{display:none;padding:16px;padding-top:60px;min-height:100vh}
 .screen.active{display:block}
 /* Top bar */
 .topbar{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;height:52px;background:var(--card);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100;border-bottom:1px solid var(--elev)}
@@ -341,20 +338,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
   </div>
 </div>
 
-<!-- Yandex RTB Banner (sticky bottom) -->
-<div id="yandex-banner-container" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;z-index:90;text-align:center;background:var(--bg);padding:2px 0;">
-  <div id="yandex_rtb_R-A-19193404-2"></div>
-</div>
-
 <script>
-// Initialize Yandex banner ad
-window.yaContextCb.push(()=>{
-  Ya.Context.AdvManager.render({
-    blockId:'R-A-19193404-2',
-    renderTo:'yandex_rtb_R-A-19193404-2'
-  });
-});
-
 const API='/api/v1';
 let token=localStorage.getItem('at');
 let refreshToken=localStorage.getItem('rt');
@@ -700,58 +684,24 @@ async function loadMain(){
   }catch(e){}
 }
 
-// Yandex RTB Fullscreen Ad (R-A-19193404-1)
-const YA_AD_BLOCK_ID='R-A-19193404-1';
-
-async function showYandexAd(){
+// Ad stub
+async function watchAdStub(){
   return new Promise((resolve)=>{
-    // Show loading overlay while ad loads
     const ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;';
-    ov.innerHTML='<div class="spinner"></div><div class="txt2 mt16">Загрузка рекламы...</div>';
+    let sec=3;
+    ov.innerHTML='<div style="font-size:1.3rem;margin-bottom:16px;">Рекламная пауза</div><div style="font-size:3rem;color:var(--neon);" id="ad-timer">'+sec+'</div><div class="txt2 mt16">Подождите...</div>';
     document.body.appendChild(ov);
-
-    let adShown=false;
-    const timeout=setTimeout(()=>{
-      // If ad doesn't load within 8 seconds, count as viewed (don't block user)
-      if(!adShown){ov.remove();resolve(true);}
-    },8000);
-
-    try{
-      window.yaContextCb.push(()=>{
-        Ya.Context.AdvManager.render({
-          blockId:YA_AD_BLOCK_ID,
-          type:'fullscreen',
-          platform:'touch',
-          onRender:()=>{
-            adShown=true;
-            ov.remove(); // Remove loading overlay, ad is now fullscreen
-          },
-          onClose:()=>{
-            clearTimeout(timeout);
-            resolve(true);
-          },
-          onError:(err)=>{
-            console.warn('Yandex ad error:',err);
-            clearTimeout(timeout);
-            ov.remove();
-            resolve(true); // Don't block user if ad fails
-          }
-        });
-      });
-    }catch(e){
-      console.warn('Yandex ad SDK error:',e);
-      clearTimeout(timeout);
-      ov.remove();
-      resolve(true);
-    }
+    const iv=setInterval(()=>{sec--;document.getElementById('ad-timer').textContent=sec;
+      if(sec<=0){clearInterval(iv);ov.innerHTML='<div style="font-size:1.3rem;margin-bottom:16px;color:var(--ok);">&#10003; Реклама просмотрена</div>';setTimeout(()=>{ov.remove();resolve(true);},500);}
+    },1000);
   });
 }
 
 async function ensureAdViewed(){
   try{
     const tkResp=await api('/ads/request-token','POST');
-    await showYandexAd();
+    await watchAdStub();
     await api('/ads/confirm','POST',{token:tkResp.token});
     return true;
   }catch(e){
@@ -850,9 +800,6 @@ async function genHoroFor(mid){
 async function loadProfile(){
   profile=await api('/profile/me');
   try{const o=await api('/profile/options');catalog=o.interests||[];}catch(e){}
-  // Hide banner ad for premium users
-  const bannerEl=document.getElementById('yandex-banner-container');
-  if(bannerEl){bannerEl.style.display=profile&&profile.is_premium?'none':'block';}
 }
 function loadProfileScreen(){
   if(!profile)return;
