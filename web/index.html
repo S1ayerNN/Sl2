@@ -1469,6 +1469,9 @@ async function saveProfile(){
       formatted=formatted.slice(0,formatted.length-2)+':'+formatted.slice(formatted.length-2);
     }
     b.birth_time=formatted;
+  }else{
+    // Send empty string to clear birth_time on backend
+    b.birth_time='';
   }
   try{
     profile=await api('/profile/me','PATCH',b);
