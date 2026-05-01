@@ -27,10 +27,24 @@ logger = logging.getLogger(__name__)
 
 # OpenRouter/OpenAI-compatible client
 # Switching providers = changing AI_BASE_URL + AI_API_KEY in .env
+#
+# NOTE: If AI_API_KEY is empty, client is still created but all calls will fail.
+# We check at generation time and raise a clear error instead of falling back silently.
 client = AsyncOpenAI(
-    api_key=settings.AI_API_KEY,
+    api_key=settings.AI_API_KEY or "not-configured",
     base_url=settings.AI_BASE_URL,
 )
+
+
+def _check_ai_configured():
+    """Raise ValueError if AI provider is not configured."""
+    if not settings.AI_API_KEY or settings.AI_API_KEY in (
+        "", "sk-or-v1-your-key-here", "your-key-here"
+    ):
+        raise ValueError(
+            "AI provider not configured. Set AI_API_KEY in .env "
+            "(OpenRouter: sk-or-v1-xxx, OpenAI: sk-xxx)"
+        )
 
 # --- PROMPT STRUCTURE ---
 # The prompt is composed of 3 parts:
@@ -228,7 +242,11 @@ async def _generate(
     """Internal generation logic.
 
     Returns (horoscope_text, prompt_used, model_used, safety_passed).
+    Raises ValueError if AI is not configured (instead of silently falling back).
     """
+    # Check AI is properly configured before attempting generation
+    _check_ai_configured()
+
     # Select model from config based on subscription tier
     model = settings.AI_MODEL_PREMIUM if is_premium else settings.AI_MODEL_FREE
 
@@ -245,6 +263,8 @@ async def _generate(
     )
 
     try:
+        logger.info("Requesting AI generation: model=%s, base_url=%s", model, settings.AI_BASE_URL)
+
         response = await client.chat.completions.create(
             model=model,
             messages=[
@@ -256,6 +276,7 @@ async def _generate(
         )
 
         horoscope_text = response.choices[0].message.content.strip()
+        logger.info("AI generation successful: %d chars, model=%s", len(horoscope_text), model)
 
         # Content safety check
         is_safe, violation = check_content_safety(horoscope_text)
@@ -292,9 +313,18 @@ async def _generate(
         return horoscope_text, user_prompt, model, True
 
     except Exception as e:
-        logger.error("AI generation failed (model=%s): %s", model, str(e), exc_info=True)
-        fallback_text = _safe_fallback(name, zodiac_sign)
-        return fallback_text, "FALLBACK (ai_generation_error)", "fallback", True
+        error_type = type(e).__name__
+        error_msg = str(e)
+        logger.error(
+            "AI generation FAILED: type=%s, model=%s, base_url=%s, error=%s",
+            error_type, model, settings.AI_BASE_URL, error_msg,
+            exc_info=True,
+        )
+        # Surface the actual error instead of silently returning fallback
+        raise ValueError(
+            f"AI generation failed ({error_type}): {error_msg}. "
+            f"Check AI_API_KEY and AI_BASE_URL in .env. Model: {model}"
+        )
 
 
 def _safe_fallback(name: str, zodiac_sign: str) -> str:
