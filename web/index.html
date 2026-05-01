@@ -73,7 +73,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 .back-btn:hover{color:var(--neon)}
 /* Starry sky */
 .starry-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;overflow:hidden}
-.starry-bg canvas{width:100%;height:100%}
+.starry-bg canvas{width:100%;height:100%;min-width:100vw}
 .auth-content{position:relative;z-index:1}
 /* Landing title */
 .landing-title{font-size:2.8rem;font-weight:400;letter-spacing:16px;background:linear-gradient(90deg,#a78bfa,#c4b5fd,#ddd6fe,#a78bfa);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 4s ease infinite}
@@ -100,9 +100,10 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 .profile-avatar{width:120px;height:120px;border-radius:50%;background:var(--elev);display:flex;align-items:center;justify-content:center;font-size:3rem;flex-shrink:0;border:2px solid var(--purple);overflow:hidden}
 .profile-avatar img{width:100%;height:100%;object-fit:cover}
 /* Horizontal field row */
-.field-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.field-row .field-label{flex:0 0 110px;color:var(--txt2);font-size:0.82rem;text-align:left}
-.field-row input,.field-row select{flex:1;margin-bottom:0}
+.field-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;overflow:hidden}
+.field-row .field-label{flex:0 0 100px;color:var(--txt2);font-size:0.82rem;text-align:left;word-break:break-word}
+.field-row input,.field-row select{flex:1;margin-bottom:0;min-width:0}
+@media(max-width:400px){.field-row .field-label{flex:0 0 80px;font-size:0.78rem}}
 /* Tooltip */
 .tooltip-wrap{position:relative;display:inline-block}
 .tooltip-wrap .tooltip-text{visibility:hidden;background:var(--elev);color:var(--txt);font-size:0.78rem;padding:8px 12px;border-radius:8px;border:1px solid var(--purple);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;z-index:10;opacity:0;transition:opacity 0.2s}
@@ -327,6 +328,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
       </div>
     </div>
     <div id="fam-gender-auto" style="display:none;" class="field-row"><span class="field-label">Пол</span><span id="fam-gender-label" style="padding:11px;font-size:0.95rem;color:var(--txt2);"></span></div>
+    <div style="margin-top:8px;"><span class="field-label" style="display:block;margin-bottom:4px;">Интересы</span><div id="fam-interests" style="display:flex;flex-wrap:wrap;gap:4px;"></div></div>
     <div class="flex mt16">
       <button class="btn btn-gold flex1" id="fam-submit-btn" onclick="addFamily()" style="font-size:0.95rem;">Добавить</button>
       <button class="btn btn-sec flex1" onclick="hideAddFamily()" style="font-size:0.95rem;">Отмена</button>
@@ -1008,11 +1010,22 @@ function syncFamBirthDate(){
   document.getElementById('fam-birth').value=y+'-'+m+'-'+d;
 }
 
+function renderFamInterests(selectedIds){
+  const sel=selectedIds||[];
+  document.getElementById('fam-interests').innerHTML=catalog.map(i=>{
+    const s=sel.includes(i.id)?'sel':'';
+    return '<span class="tag '+s+'" data-id="'+esc(i.id)+'" onclick="this.classList.toggle(\'sel\')" style="font-size:0.82rem;padding:4px 10px;">'+(i.icon?esc(i.icon):'')+' '+esc(i.label_ru)+'</span>';
+  }).join('');
+}
+function getFamInterests(){
+  return Array.from(document.querySelectorAll('#fam-interests .sel')).map(t=>t.dataset.id);
+}
 function showAddFamily(){
   document.getElementById('fam-form').style.display='block';
   document.getElementById('fam-add').style.display='none';
   document.getElementById('fam-submit-btn').textContent='Добавить';
   initFamBirthDatePicker(null);
+  renderFamInterests([]);
 }
 function hideAddFamily(){
   document.getElementById('fam-form').style.display='none';
@@ -1075,11 +1088,13 @@ async function addFamily(){
   try{
     if(editingFamilyId){
       // Update existing
-      await api('/profile/family/'+editingFamilyId,'PATCH',{name:name,relation:rel,birth_date:birth,gender:famGenderVal});
+      const ints=getFamInterests();
+      await api('/profile/family/'+editingFamilyId,'PATCH',{name:name,relation:rel,birth_date:birth,gender:famGenderVal,interests:ints});
       editingFamilyId=null;
       notify('Данные обновлены!','success');
     }else{
-      await api('/profile/family','POST',{name:name,relation:rel,birth_date:birth,gender:famGenderVal});
+      const ints=getFamInterests();
+      await api('/profile/family','POST',{name:name,relation:rel,birth_date:birth,gender:famGenderVal,interests:ints});
       notify('Член семьи добавлен!','success');
     }
     hideAddFamily();loadFamily();
@@ -1105,6 +1120,7 @@ function editFamily(mid){
     }
     famGenderVal=m.gender;
     onRelationChange();
+    renderFamInterests(m.interests||[]);
   });
 }
 
