@@ -104,6 +104,11 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 .field-row .field-label{flex:0 0 100px;color:var(--txt2);font-size:0.82rem;text-align:left;word-break:break-word}
 .field-row input,.field-row select{flex:1;margin-bottom:0;min-width:0}
 @media(max-width:400px){.field-row .field-label{flex:0 0 80px;font-size:0.78rem}}
+/* Clickable profile fields */
+.clickable-field{cursor:pointer;border-radius:8px;padding:2px 4px;transition:background 0.2s}
+.clickable-field:hover{background:rgba(167,139,250,0.08)}
+.field-empty-text{color:var(--neon);font-style:italic;font-size:0.9rem;opacity:0.85;padding:11px;flex:1}
+.field-empty-text:hover{opacity:1;text-decoration:underline}
 /* Tooltip */
 .tooltip-wrap{position:relative;display:inline-block}
 .tooltip-wrap .tooltip-text{visibility:hidden;background:var(--elev);color:var(--txt);font-size:0.78rem;padding:8px 12px;border-radius:8px;border:1px solid var(--purple);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;z-index:10;opacity:0;transition:opacity 0.2s}
@@ -369,10 +374,10 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
       </div>
       <input type="hidden" id="ed-birthdate">
     </div>
-    <div class="field-row"><span class="field-label">Место рождения</span><input type="text" id="ed-place" placeholder="Москва" maxlength="50" disabled></div>
-    <div class="field-row"><span class="field-label">Время рождения</span><input type="text" id="ed-time" placeholder="1430" maxlength="5" disabled></div>
-    <div class="field-row"><span class="field-label">Профессия</span><input type="text" id="ed-prof" placeholder="Дизайнер" maxlength="50" disabled></div>
-    <div class="field-row"><span class="field-label">Email</span><input type="email" id="ed-email" placeholder="ivan@example.com" maxlength="50" disabled></div>
+    <div class="field-row clickable-field" onclick="activateField('ed-place')"><span class="field-label">Место рождения</span><input type="text" id="ed-place" placeholder="" maxlength="50" disabled></div>
+    <div class="field-row clickable-field" onclick="activateField('ed-time')"><span class="field-label">Время рождения</span><input type="text" id="ed-time" placeholder="" maxlength="5" disabled></div>
+    <div class="field-row clickable-field" onclick="activateField('ed-prof')"><span class="field-label">Профессия</span><input type="text" id="ed-prof" placeholder="" maxlength="50" disabled></div>
+    <div class="field-row clickable-field" onclick="activateField('ed-email')"><span class="field-label">Email</span><input type="email" id="ed-email" placeholder="" maxlength="50" disabled></div>
     <span id="btn-edit-profile" onclick="toggleEditProfile()" style="cursor:pointer;font-size:0.82rem;color:var(--neon);display:inline-block;margin-top:8px;">&#9998; Изменить</span>
     <div id="profile-save-area" style="display:none;">
       <button class="btn btn-gold mt16" onclick="saveProfile()">Сохранить</button>
@@ -1196,12 +1201,12 @@ function loadProfileScreen(){
   // Init date picker dropdowns
   initBirthDatePicker(profile.birth_date);
 
-  // Fields - read-only by default
+  // Fields - read-only by default, show "Не заполнено" for empty optional fields
   document.getElementById('ed-name').value=profile.name||'';
-  document.getElementById('ed-time').value=formatBirthTime(profile.birth_time)||'';
-  document.getElementById('ed-place').value=profile.birth_place||'';
-  document.getElementById('ed-prof').value=profile.profession||'';
-  document.getElementById('ed-email').value=profile.email||'';
+  setFieldWithEmpty('ed-time',formatBirthTime(profile.birth_time)||'');
+  setFieldWithEmpty('ed-place',profile.birth_place||'');
+  setFieldWithEmpty('ed-prof',profile.profession||'');
+  setFieldWithEmpty('ed-email',profile.email||'');
   setProfileFieldsDisabled(true);
 
   // Interests - show only selected
@@ -1222,8 +1227,50 @@ function setProfileFieldsDisabled(disabled){
   document.getElementById('btn-edit-profile').innerHTML=disabled?'&#9998; Изменить':'&#10005; Отмена';
 }
 
+function setFieldWithEmpty(inputId,value){
+  const input=document.getElementById(inputId);
+  const row=input.closest('.field-row');
+  // Remove any existing "Не заполнено" span
+  const existing=row.querySelector('.field-empty-text');
+  if(existing)existing.remove();
+  if(value){
+    input.value=value;
+    input.style.display='';
+  }else{
+    input.value='';
+    input.style.display='none';
+    const span=document.createElement('span');
+    span.className='field-empty-text';
+    span.textContent='Не заполнено';
+    row.appendChild(span);
+  }
+}
+
+function activateField(inputId){
+  if(profileEditMode)return; // already editing
+  profileEditMode=true;
+  const input=document.getElementById(inputId);
+  // Remove "Не заполнено" spans and show all inputs
+  document.querySelectorAll('.field-empty-text').forEach(el=>el.remove());
+  ['ed-time','ed-place','ed-prof','ed-email'].forEach(id=>{
+    document.getElementById(id).style.display='';
+  });
+  setProfileFieldsDisabled(false);
+  input.focus();
+}
+
 function toggleEditProfile(){
   profileEditMode=!profileEditMode;
+  if(!profileEditMode){
+    // Re-render fields to show "Не заполнено" for empty ones
+    loadProfileScreen();
+    return;
+  }
+  // Remove "Не заполнено" spans and show all inputs
+  document.querySelectorAll('.field-empty-text').forEach(el=>el.remove());
+  ['ed-time','ed-place','ed-prof','ed-email'].forEach(id=>{
+    document.getElementById(id).style.display='';
+  });
   setProfileFieldsDisabled(!profileEditMode);
 }
 
