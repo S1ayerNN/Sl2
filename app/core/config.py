@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     AI_MODEL_PREMIUM: str = "openai/gpt-4o"     # Model for premium users
 
     # AI generation params
-    AI_MAX_TOKENS: int = 500
+    AI_MAX_TOKENS: int = 350
     AI_TEMPERATURE: float = 0.8
 
     # Telegram

@@ -875,7 +875,8 @@ async function genHoro(type='general',focusId=null){
 function showHoro(h){
   curHoroId=h.id;
   document.getElementById('res-text').textContent=h.horoscope_text;
-  document.getElementById('res-model').textContent=h.ai_model_used;
+  // Model version hidden from users
+  document.getElementById('res-model').textContent='';
   const labels={general:'Общий',focused:'Фокусный',regeneration:'Пересоздание'};
   let l=labels[h.horoscope_type]||h.horoscope_type;
   if(h.focus_interest_id)l+=' ('+h.focus_interest_id+')';
