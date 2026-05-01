@@ -309,7 +309,14 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
     <h2 style="font-size:1rem;font-weight:400;margin-bottom:12px;">Добавь близкого тебе человека</h2>
     <div class="field-row"><span class="field-label">Это</span><select id="fam-rel" onchange="onRelationChange()" style="font-size:0.95rem;"><option value="">Выбери</option></select></div>
     <div class="field-row"><span class="field-label">Имя</span><input type="text" id="fam-name" placeholder="Имя" maxlength="50" style="font-size:0.95rem;"></div>
-    <div class="field-row"><span class="field-label">Дата рождения</span><input type="date" id="fam-birth" min="1920-01-01" max="2020-12-31" style="font-size:0.95rem;"></div>
+    <div class="field-row"><span class="field-label">Дата рождения</span>
+      <div style="display:flex;gap:4px;flex:1;">
+        <select id="fam-birth-day" style="flex:1;font-size:0.95rem;"></select>
+        <select id="fam-birth-month" style="flex:1.2;font-size:0.95rem;" onchange="updateFamBirthDays()"></select>
+        <select id="fam-birth-year" style="flex:1;font-size:0.95rem;" onchange="updateFamBirthDays()"></select>
+      </div>
+      <input type="hidden" id="fam-birth">
+    </div>
     <div class="field-row" id="fam-gender-row"><span class="field-label">Пол</span>
       <div class="flex" style="flex:1;gap:4px;">
         <button class="btn btn-sec flex1 btn-sm" id="fam-m" onclick="famGender('male')" style="margin:0;font-size:0.95rem;">&#9794; М</button>
@@ -318,7 +325,7 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
     </div>
     <div id="fam-gender-auto" style="display:none;" class="field-row"><span class="field-label">Пол</span><span id="fam-gender-label" style="padding:11px;font-size:0.95rem;color:var(--txt2);"></span></div>
     <div class="flex mt16">
-      <button class="btn btn-gold flex1" onclick="addFamily()" style="font-size:0.95rem;">Добавить</button>
+      <button class="btn btn-gold flex1" id="fam-submit-btn" onclick="addFamily()" style="font-size:0.95rem;">Добавить</button>
       <button class="btn btn-sec flex1" onclick="hideAddFamily()" style="font-size:0.95rem;">Отмена</button>
     </div>
   </div>
@@ -862,6 +869,7 @@ async function loadFamily(){
             '<span class="txt2" style="font-size:0.85rem;">'+m.birth_date+' &middot; '+m.zodiac_sign+'</span>'+
             '<button class="btn btn-sec btn-sm" onclick="genHoroFor(\''+m.id+'\')" style="margin:0;padding:6px 14px;">&#128302; Получить гороскоп</button>'+
           '</div>'+
+          '<div id="fam-horo-'+m.id+'"></div>'+
         '</div>';
       }).join('');
     }else{
@@ -893,9 +901,52 @@ async function loadFamily(){
     relations.forEach(r=>{const o=document.createElement('option');o.value=r.value;o.textContent=r.label;sel.appendChild(o);});
   }catch(e){notify(e.message,'error');}
 }
+function initFamBirthDatePicker(dateStr){
+  const yearSel=document.getElementById('fam-birth-year');
+  const monthSel=document.getElementById('fam-birth-month');
+  const daySel=document.getElementById('fam-birth-day');
+  let y=2000,m=1,d=1;
+  if(dateStr){const p=dateStr.split('-');y=parseInt(p[0]);m=parseInt(p[1]);d=parseInt(p[2]);}
+  yearSel.innerHTML='';
+  for(let i=2024;i>=1920;i--){
+    const o=document.createElement('option');o.value=i;o.textContent=i;
+    if(i===y)o.selected=true;
+    yearSel.appendChild(o);
+  }
+  monthSel.innerHTML='';
+  monthNames.forEach((name,i)=>{
+    const o=document.createElement('option');o.value=i+1;o.textContent=name;
+    if(i+1===m)o.selected=true;
+    monthSel.appendChild(o);
+  });
+  updateFamBirthDays(d);
+}
+function updateFamBirthDays(selectDay){
+  const y=parseInt(document.getElementById('fam-birth-year').value)||2000;
+  const m=parseInt(document.getElementById('fam-birth-month').value)||1;
+  const daysInMonth=new Date(y,m,0).getDate();
+  const daySel=document.getElementById('fam-birth-day');
+  const curDay=selectDay||parseInt(daySel.value)||1;
+  daySel.innerHTML='';
+  for(let i=1;i<=daysInMonth;i++){
+    const o=document.createElement('option');o.value=i;o.textContent=i;
+    if(i===Math.min(curDay,daysInMonth))o.selected=true;
+    daySel.appendChild(o);
+  }
+  syncFamBirthDate();
+}
+function syncFamBirthDate(){
+  const y=document.getElementById('fam-birth-year').value;
+  const m=String(document.getElementById('fam-birth-month').value).padStart(2,'0');
+  const d=String(document.getElementById('fam-birth-day').value).padStart(2,'0');
+  document.getElementById('fam-birth').value=y+'-'+m+'-'+d;
+}
+
 function showAddFamily(){
   document.getElementById('fam-form').style.display='block';
   document.getElementById('fam-add').style.display='none';
+  document.getElementById('fam-submit-btn').textContent='Добавить';
+  initFamBirthDatePicker(null);
 }
 function hideAddFamily(){
   document.getElementById('fam-form').style.display='none';
@@ -944,6 +995,7 @@ function onRelationChange(){
 let editingFamilyId=null;
 
 async function addFamily(){
+  syncFamBirthDate();
   const name=document.getElementById('fam-name').value.trim();
   const rel=document.getElementById('fam-rel').value;
   const birth=document.getElementById('fam-birth').value;
@@ -969,25 +1021,24 @@ async function addFamily(){
 }
 
 function editFamily(mid){
-  // Find member data from the loaded list
   editingFamilyId=mid;
-  showAddFamily();
+  document.getElementById('fam-form').style.display='block';
+  document.getElementById('fam-add').style.display='none';
+  document.getElementById('fam-submit-btn').textContent='Обновить';
+  document.querySelector('#fam-form h2').textContent='Редактирование';
   // Populate form from API
   api('/profile/family').then(members=>{
     const m=members.find(x=>x.id===mid);
     if(!m)return;
     document.getElementById('fam-name').value=m.name;
-    document.getElementById('fam-birth').value=m.birth_date;
+    initFamBirthDatePicker(m.birth_date);
     // Set relation
     const sel=document.getElementById('fam-rel');
     for(let i=0;i<sel.options.length;i++){
       if(sel.options[i].value===m.relation){sel.selectedIndex=i;break;}
     }
-    // Set gender
     famGenderVal=m.gender;
     onRelationChange();
-    // Update form title
-    document.querySelector('#fam-form h2').textContent='Редактирование';
   });
 }
 
@@ -1008,19 +1059,25 @@ function closeConfirmModal(){
 }
 
 async function genHoroFor(mid){
+  const btn=event?.target;
+  if(btn){btn.disabled=true;btn.textContent='Генерация...';}
   try{
     // Free users need ad first
     if(profile&&profile.subscription_tier==='free'){
       const adOk=await ensureAdViewed();
-      if(!adOk)return;
+      if(!adOk){if(btn){btn.disabled=false;btn.innerHTML='&#128302; Получить гороскоп';}return;}
     }
     const h=await api('/horoscope/generate','POST',{horoscope_type:'general',family_member_id:mid});
     if(h){
-      notify('Гороскоп для близкого создан!','success');
-      showSection('horoscope');
-      showHoro(h);
+      // Show horoscope text inside the member card
+      const horoDiv=document.getElementById('fam-horo-'+mid);
+      if(horoDiv){
+        horoDiv.innerHTML='<div class="horo-text" style="font-size:0.9rem;margin-top:8px;padding-top:8px;border-top:1px solid var(--elev);">'+h.horoscope_text+'</div>';
+      }
+      notify('Гороскоп готов!','success');
     }
   }catch(e){notify(e.message,'error');}
+  if(btn){btn.disabled=false;btn.innerHTML='&#128302; Получить гороскоп';}
 }
 
 // Profile
