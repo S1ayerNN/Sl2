@@ -25,7 +25,7 @@ from app.models.user import (
 from app.schemas.user import (
     AVAILABLE_GENDERS, AVAILABLE_RELATIONS,
     AvailableOptionsResponse, FamilyMemberCreate, FamilyMemberResponse,
-    ProfileCompletenessHint, UserProfile, UserProfileUpdate,
+    FamilyMemberUpdate, ProfileCompletenessHint, UserProfile, UserProfileUpdate,
 )
 from app.services.interest_catalog import (
     get_catalog_for_api,
@@ -301,6 +301,66 @@ async def add_family_member(
     return FamilyMemberResponse(
         id=member.id,
         name=name,
+        relation=member.relation,
+        birth_date=member.birth_date,
+        birth_time=member.birth_time,
+        gender=member.gender,
+        zodiac_sign=member.zodiac_sign,
+        interests=member.interests or [],
+        created_at=member.created_at,
+    )
+
+
+@router.patch("/family/{member_id}", response_model=FamilyMemberResponse)
+async def update_family_member(
+    member_id: UUID,
+    data: FamilyMemberUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a family member profile."""
+    result = await db.execute(
+        select(FamilyMember)
+        .where(FamilyMember.id == member_id)
+        .where(FamilyMember.owner_id == current_user.id)
+    )
+    member = result.scalar_one_or_none()
+    if member is None:
+        raise HTTPException(status_code=404, detail="Family member not found")
+
+    if data.name is not None:
+        name = data.name.strip()
+        if len(name) < 2 or len(name) > 100:
+            raise HTTPException(status_code=400, detail="Name must be 2-100 characters")
+        member.name_encrypted = encrypt_pii(name)
+
+    if data.relation is not None:
+        if data.relation not in [r.value for r in FamilyRelation]:
+            raise HTTPException(status_code=400, detail="Invalid relation")
+        member.relation = data.relation
+
+    if data.birth_date is not None:
+        birth_date = date.fromisoformat(data.birth_date)
+        member.birth_date = birth_date
+        member.zodiac_sign = get_zodiac_sign(birth_date)
+
+    if data.gender is not None:
+        if data.gender not in [g.value for g in Gender]:
+            raise HTTPException(status_code=400, detail="Invalid gender")
+        member.gender = data.gender
+
+    if data.birth_time is not None:
+        h, m = map(int, data.birth_time.split(":"))
+        member.birth_time = time(h, m)
+
+    if data.interests is not None:
+        member.interests = validate_interest_ids(data.interests)
+
+    await db.flush()
+
+    return FamilyMemberResponse(
+        id=member.id,
+        name=decrypt_pii(member.name_encrypted),
         relation=member.relation,
         birth_date=member.birth_date,
         birth_time=member.birth_time,

@@ -117,6 +117,16 @@ class FamilyMemberCreate(BaseModel):
     interests: Optional[list[str]] = None
 
 
+class FamilyMemberUpdate(BaseModel):
+    """Update a family member profile."""
+    name: Optional[str] = None
+    relation: Optional[str] = None
+    birth_date: Optional[str] = None  # YYYY-MM-DD
+    gender: Optional[str] = None
+    birth_time: Optional[str] = None  # HH:MM
+    interests: Optional[list[str]] = None
+
+
 class FamilyMemberResponse(BaseModel):
     """Family member profile response."""
     id: UUID

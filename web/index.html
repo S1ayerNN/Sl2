@@ -843,10 +843,13 @@ async function loadFamily(){
   try{
     const members=await api('/profile/family');
     const el=document.getElementById('fam-list');
-    const relLabels={spouse:profile.gender==='male'?'Жена':'Муж',partner:profile.gender==='male'?'Девушка':'Молодой человек',child:'Ребёнок',parent:'Родитель',sibling:'Брат/Сестра'};
+    function getRelLabel(relation,memberGender){
+      const map={spouse:memberGender==='female'?'Жена':'Муж',partner:memberGender==='female'?'Девушка':'Молодой человек',child:'Ребёнок',parent:'Родитель',sibling:memberGender==='female'?'Сестра':'Брат'};
+      return map[relation]||relation;
+    }
     if(members.length){
       el.innerHTML=members.map(m=>{
-        const relName=relLabels[m.relation]||m.relation;
+        const relName=getRelLabel(m.relation,m.gender);
         return '<div class="card">'+
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
             '<div><span class="gold" style="font-size:1.05rem;">'+m.name+'</span><span class="txt2">, '+relName+'</span></div>'+
@@ -897,6 +900,16 @@ function showAddFamily(){
 function hideAddFamily(){
   document.getElementById('fam-form').style.display='none';
   document.getElementById('fam-add').style.display='block';
+  editingFamilyId=null;
+  document.getElementById('fam-name').value='';
+  document.getElementById('fam-birth').value='';
+  document.getElementById('fam-rel').selectedIndex=0;
+  famGenderVal='';
+  document.getElementById('fam-gender-row').style.display='flex';
+  document.getElementById('fam-gender-auto').style.display='none';
+  document.getElementById('fam-m').style.borderColor='';
+  document.getElementById('fam-f').style.borderColor='';
+  document.querySelector('#fam-form h2').textContent='Добавь близкого тебе человека';
 }
 function famGender(g){famGenderVal=g;document.getElementById('fam-m').style.borderColor=g==='male'?'var(--neon)':'';document.getElementById('fam-f').style.borderColor=g==='female'?'var(--neon)':'';}
 
@@ -928,16 +941,54 @@ function onRelationChange(){
   }
 }
 
+let editingFamilyId=null;
+
 async function addFamily(){
-  if(!famGenderVal||!document.getElementById('fam-name').value||!document.getElementById('fam-birth').value||!document.getElementById('fam-rel').value){notify('Заполни все поля','error');return;}
+  const name=document.getElementById('fam-name').value.trim();
+  const rel=document.getElementById('fam-rel').value;
+  const birth=document.getElementById('fam-birth').value;
+  if(!name){notify('Введи имя','error');return;}
+  if(!rel){notify('Выбери кого добавляешь','error');return;}
+  if(!birth){notify('Укажи дату рождения','error');return;}
+  // Validate date is not in the future
+  if(new Date(birth)>new Date()){notify('Введите правильную дату','error');return;}
+  if(!famGenderVal){notify('Выбери пол','error');return;}
+
   try{
-    await api('/profile/family','POST',{name:document.getElementById('fam-name').value,relation:document.getElementById('fam-rel').value,birth_date:document.getElementById('fam-birth').value,gender:famGenderVal});
-    hideAddFamily();loadFamily();notify('Член семьи добавлен!','success');
+    if(editingFamilyId){
+      // Update existing
+      await api('/profile/family/'+editingFamilyId,'PATCH',{name:name,relation:rel,birth_date:birth,gender:famGenderVal});
+      editingFamilyId=null;
+      notify('Данные обновлены!','success');
+    }else{
+      await api('/profile/family','POST',{name:name,relation:rel,birth_date:birth,gender:famGenderVal});
+      notify('Член семьи добавлен!','success');
+    }
+    hideAddFamily();loadFamily();
   }catch(e){notify(e.message,'error');}
 }
+
 function editFamily(mid){
-  // For now, delete and re-add (backend doesn't have PATCH for family members)
-  notify('Удали и добавь заново с новыми данными','info');
+  // Find member data from the loaded list
+  editingFamilyId=mid;
+  showAddFamily();
+  // Populate form from API
+  api('/profile/family').then(members=>{
+    const m=members.find(x=>x.id===mid);
+    if(!m)return;
+    document.getElementById('fam-name').value=m.name;
+    document.getElementById('fam-birth').value=m.birth_date;
+    // Set relation
+    const sel=document.getElementById('fam-rel');
+    for(let i=0;i<sel.options.length;i++){
+      if(sel.options[i].value===m.relation){sel.selectedIndex=i;break;}
+    }
+    // Set gender
+    famGenderVal=m.gender;
+    onRelationChange();
+    // Update form title
+    document.querySelector('#fam-form h2').textContent='Редактирование';
+  });
 }
 
 let pendingDeleteId=null;
