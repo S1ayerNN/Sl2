@@ -171,12 +171,15 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
 <!-- AUTH -->
 <div id="screen-auth" class="screen active" style="padding-top:0;">
   <div class="starry-bg"><canvas id="starCanvas"></canvas></div>
-  <div class="auth-content center" style="padding-top:42vh;">
+  <div class="auth-content center" style="padding-top:35vh;">
     <div class="landing-title">MY.ASTRO</div>
     <div class="txt2 mb16" style="font-size:0.95rem;margin-top:8px;">Твой персональный астролог каждый день рядом</div>
     <div style="margin-top:40px;">
       <button class="btn btn-gold" onclick="devLogin()">Войти (тестовый режим)</button>
       <p class="txt2 mt16" style="font-size:0.82rem;">В продакшене: Telegram / Google</p>
+    </div>
+    <div style="position:fixed;bottom:16px;left:0;right:0;text-align:center;">
+      <a href="/privacy.html" target="_blank" class="txt2" style="font-size:0.75rem;text-decoration:underline;opacity:0.6;">Политика обработки персональных данных</a>
     </div>
   </div>
 </div>
@@ -303,19 +306,20 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
     <button class="btn btn-sec" onclick="showAddFamily()">+ Добавить</button>
   </div>
   <div id="fam-form" style="display:none;" class="card">
-    <h2>Добавь близкого тебе человека</h2>
-    <div class="field-row"><span class="field-label">Это</span><select id="fam-rel"><option value="">Выбери</option></select></div>
-    <div class="field-row"><span class="field-label">Имя</span><input type="text" id="fam-name" placeholder="Имя" maxlength="50"></div>
-    <div class="field-row"><span class="field-label">Дата рождения</span><input type="date" id="fam-birth" min="1920-01-01" max="2020-12-31"></div>
-    <div class="field-row"><span class="field-label">Пол</span>
+    <h2 style="font-size:1rem;font-weight:400;margin-bottom:12px;">Добавь близкого тебе человека</h2>
+    <div class="field-row"><span class="field-label">Это</span><select id="fam-rel" onchange="onRelationChange()" style="font-size:0.95rem;"><option value="">Выбери</option></select></div>
+    <div class="field-row"><span class="field-label">Имя</span><input type="text" id="fam-name" placeholder="Имя" maxlength="50" style="font-size:0.95rem;"></div>
+    <div class="field-row"><span class="field-label">Дата рождения</span><input type="date" id="fam-birth" min="1920-01-01" max="2020-12-31" style="font-size:0.95rem;"></div>
+    <div class="field-row" id="fam-gender-row"><span class="field-label">Пол</span>
       <div class="flex" style="flex:1;gap:4px;">
-        <button class="btn btn-sec flex1 btn-sm" id="fam-m" onclick="famGender('male')" style="margin:0;">&#9794; М</button>
-        <button class="btn btn-sec flex1 btn-sm" id="fam-f" onclick="famGender('female')" style="margin:0;">&#9792; Ж</button>
+        <button class="btn btn-sec flex1 btn-sm" id="fam-m" onclick="famGender('male')" style="margin:0;font-size:0.95rem;">&#9794; М</button>
+        <button class="btn btn-sec flex1 btn-sm" id="fam-f" onclick="famGender('female')" style="margin:0;font-size:0.95rem;">&#9792; Ж</button>
       </div>
     </div>
+    <div id="fam-gender-auto" style="display:none;" class="field-row"><span class="field-label">Пол</span><span id="fam-gender-label" style="padding:11px;font-size:0.95rem;color:var(--txt2);"></span></div>
     <div class="flex mt16">
-      <button class="btn btn-gold flex1" onclick="addFamily()">Добавить</button>
-      <button class="btn btn-sec flex1" onclick="hideAddFamily()">Отмена</button>
+      <button class="btn btn-gold flex1" onclick="addFamily()" style="font-size:0.95rem;">Добавить</button>
+      <button class="btn btn-sec flex1" onclick="hideAddFamily()" style="font-size:0.95rem;">Отмена</button>
     </div>
   </div>
 </div>
@@ -459,21 +463,21 @@ const zodiacEmoji={
   // Zodiac figure constellations - stars form the shape of the zodiac sign
   // Each figure: points (star positions) + lines (connections) + outline (faint figure shape)
   const zodiacFigures = {
-    // Ursa Major (Big Dipper) - 7 main stars, centered around y=0.20
+    // Ursa Major (Big Dipper) - 7 main stars, wider spread
     ursaMajor: {
       stars: [
-        {x:0.38,y:0.16},{x:0.41,y:0.14},{x:0.45,y:0.14},{x:0.48,y:0.16}, // bowl
-        {x:0.52,y:0.18},{x:0.56,y:0.20},{x:0.60,y:0.19}, // handle
+        {x:0.28,y:0.16},{x:0.35,y:0.12},{x:0.44,y:0.11},{x:0.52,y:0.15}, // bowl
+        {x:0.60,y:0.18},{x:0.67,y:0.21},{x:0.74,y:0.19}, // handle
       ],
       lines: [[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]],
       brightness: []
     },
-    // Leo - lion constellation, centered around y=0.20
+    // Leo - lion constellation, wider spread
     leo: {
       stars: [
-        {x:0.38,y:0.16},{x:0.40,y:0.13},{x:0.44,y:0.12},{x:0.47,y:0.14}, // sickle head
-        {x:0.42,y:0.17},{x:0.40,y:0.20}, // sickle bottom
-        {x:0.48,y:0.18},{x:0.53,y:0.22},{x:0.57,y:0.20},{x:0.55,y:0.17}, // body
+        {x:0.28,y:0.16},{x:0.32,y:0.11},{x:0.40,y:0.09},{x:0.48,y:0.12}, // sickle head
+        {x:0.38,y:0.18},{x:0.32,y:0.22}, // sickle bottom
+        {x:0.52,y:0.17},{x:0.62,y:0.23},{x:0.70,y:0.20},{x:0.66,y:0.14}, // body
       ],
       lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[3,6],[6,7],[7,8],[8,9],[9,6]],
       brightness: []
@@ -839,7 +843,10 @@ async function loadFamily(){
         return '<div class="card">'+
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
             '<div><span class="gold" style="font-size:1.05rem;">'+m.name+'</span><span class="txt2">, '+relName+'</span></div>'+
-            '<span style="cursor:pointer;font-size:0.85rem;color:var(--err);opacity:0.7;padding:4px 8px;border-radius:8px;background:rgba(239,71,111,0.1);" onclick="deleteFamily(\''+m.id+'\')">&#128465; Удалить</span>'+
+            '<div style="display:flex;gap:8px;">'+
+              '<span style="cursor:pointer;font-size:0.82rem;color:var(--neon);padding:4px 8px;border-radius:8px;background:rgba(167,139,250,0.1);" onclick="editFamily(\''+m.id+'\')">&#9998;</span>'+
+              '<span style="cursor:pointer;font-size:0.82rem;color:var(--err);opacity:0.7;padding:4px 8px;border-radius:8px;background:rgba(239,71,111,0.1);" onclick="deleteFamily(\''+m.id+'\')">&#128465;</span>'+
+            '</div>'+
           '</div>'+
           '<div style="display:flex;justify-content:space-between;align-items:center;">'+
             '<span class="txt2" style="font-size:0.85rem;">'+m.birth_date+' &middot; '+m.zodiac_sign+'</span>'+
@@ -859,8 +866,7 @@ async function loadFamily(){
       addDiv.innerHTML='<div class="txt2 mb8" style="font-size:0.82rem;">'+members.length+' из '+limit+'</div><button class="btn btn-sec btn-sm" onclick="showAddFamily()" style="padding:8px 16px;">+ Добавить</button>';
     }else{
       // limit reached or 0: show add button that leads to subscription
-      const addAction=limit>0?'notify(&quot;Достигнут лимит&quot;,&quot;info&quot;)':'showSection(&quot;subscription&quot;)';
-      addDiv.innerHTML='<div class="tooltip-wrap" style="display:inline-block;"><button class="btn btn-sec btn-sm" onclick="'+addAction+'" style="padding:8px 16px;">+ Добавить</button><span class="tooltip-text">Подключи подписку и получай персональные гороскопы для твоих близких каждый день</span></div>';
+      addDiv.innerHTML='<div class="tooltip-wrap" style="display:inline-block;"><button class="btn btn-sec btn-sm" onclick="notify(&quot;Достигнут лимит. Оформи подписку для расширения&quot;,&quot;info&quot;);showSection(&quot;subscription&quot;)" style="padding:8px 16px;">+ Добавить</button><span class="tooltip-text">Подключи подписку и получай персональные гороскопы для твоих близких каждый день</span></div>';
     }
     // Gender-dependent relation labels
     const sel=document.getElementById('fam-rel');
@@ -887,6 +893,34 @@ function hideAddFamily(){
 }
 function famGender(g){famGenderVal=g;document.getElementById('fam-m').style.borderColor=g==='male'?'var(--neon)':'';document.getElementById('fam-f').style.borderColor=g==='female'?'var(--neon)':'';}
 
+// Auto-set gender based on relation
+const relationGenderMap={};
+function onRelationChange(){
+  const rel=document.getElementById('fam-rel');
+  const selText=rel.options[rel.selectedIndex]?.textContent||'';
+  // Map relation labels to gender
+  const femaleRels=['Жена','Девушка','Сестра','Мама'];
+  const maleRels=['Муж','Молодой человек','Брат','Папа'];
+  if(femaleRels.some(r=>selText===r)){
+    famGenderVal='female';
+    document.getElementById('fam-gender-row').style.display='none';
+    document.getElementById('fam-gender-auto').style.display='flex';
+    document.getElementById('fam-gender-label').innerHTML='&#9792; Женский';
+  }else if(maleRels.some(r=>selText===r)){
+    famGenderVal='male';
+    document.getElementById('fam-gender-row').style.display='none';
+    document.getElementById('fam-gender-auto').style.display='flex';
+    document.getElementById('fam-gender-label').innerHTML='&#9794; Мужской';
+  }else{
+    // Ребёнок, Родитель - manual selection
+    famGenderVal='';
+    document.getElementById('fam-gender-row').style.display='flex';
+    document.getElementById('fam-gender-auto').style.display='none';
+    document.getElementById('fam-m').style.borderColor='';
+    document.getElementById('fam-f').style.borderColor='';
+  }
+}
+
 async function addFamily(){
   if(!famGenderVal||!document.getElementById('fam-name').value||!document.getElementById('fam-birth').value||!document.getElementById('fam-rel').value){notify('Заполни все поля','error');return;}
   try{
@@ -894,6 +928,11 @@ async function addFamily(){
     hideAddFamily();loadFamily();notify('Член семьи добавлен!','success');
   }catch(e){notify(e.message,'error');}
 }
+function editFamily(mid){
+  // For now, delete and re-add (backend doesn't have PATCH for family members)
+  notify('Удали и добавь заново с новыми данными','info');
+}
+
 let pendingDeleteId=null;
 function deleteFamily(mid){
   pendingDeleteId=mid;
