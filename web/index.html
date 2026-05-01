@@ -945,6 +945,18 @@ async function loadFamily(){
           '<div id="fam-horo-'+m.id+'"></div>'+
         '</div>';
       }).join('');
+      // Load today's horoscope for each member
+      members.forEach(async(m)=>{
+        try{
+          const h=await api('/horoscope/today?family_member_id='+m.id);
+          if(h){
+            const horoDiv=document.getElementById('fam-horo-'+m.id);
+            if(horoDiv){
+              horoDiv.innerHTML='<div class="horo-text" style="font-size:0.9rem;margin-top:8px;padding-top:8px;border-top:1px solid var(--elev);">'+esc(h.horoscope_text)+'</div>';
+            }
+          }
+        }catch(e){}
+      });
     }else{
       el.innerHTML='<div class="card center txt2">Пока никто не добавлен</div>';
     }
@@ -1159,7 +1171,7 @@ async function genHoroFor(mid){
       // Show horoscope text inside the member card
       const horoDiv=document.getElementById('fam-horo-'+mid);
       if(horoDiv){
-        horoDiv.innerHTML='<div class="horo-text" style="font-size:0.9rem;margin-top:8px;padding-top:8px;border-top:1px solid var(--elev);">'+h.horoscope_text+'</div>';
+        horoDiv.innerHTML='<div class="horo-text" style="font-size:0.9rem;margin-top:8px;padding-top:8px;border-top:1px solid var(--elev);">'+esc(h.horoscope_text)+'</div>';
       }
       notify('Гороскоп готов!','success');
     }
