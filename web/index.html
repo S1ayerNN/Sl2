@@ -349,7 +349,14 @@ label.field{display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:4px}
     <div class="profile-hint" style="margin-bottom:12px;">Добавь чуть больше информации о себе для уточнения прогноза</div>
     <div class="field-row"><span class="field-label">Пол</span><span id="ed-gender" style="padding:11px;font-size:1.1rem;"></span></div>
     <div class="field-row"><span class="field-label">Имя</span><input type="text" id="ed-name" placeholder="Имя" maxlength="50" disabled></div>
-    <div class="field-row"><span class="field-label">Дата рождения</span><input type="date" id="ed-birthdate" min="1920-01-01" max="2020-12-31" disabled></div>
+    <div class="field-row"><span class="field-label">Дата рождения</span>
+      <div style="display:flex;gap:4px;flex:1;">
+        <select id="ed-birth-day" disabled style="flex:1;font-size:0.95rem;"></select>
+        <select id="ed-birth-month" disabled style="flex:1.2;font-size:0.95rem;" onchange="updateBirthDays()"></select>
+        <select id="ed-birth-year" disabled style="flex:1;font-size:0.95rem;" onchange="updateBirthDays()"></select>
+      </div>
+      <input type="hidden" id="ed-birthdate">
+    </div>
     <div class="field-row"><span class="field-label">Место рождения</span><input type="text" id="ed-place" placeholder="Москва" maxlength="50" disabled></div>
     <div class="field-row"><span class="field-label">Время рождения</span><input type="text" id="ed-time" placeholder="1430" maxlength="5" disabled></div>
     <div class="field-row"><span class="field-label">Профессия</span><input type="text" id="ed-prof" placeholder="Дизайнер" maxlength="50" disabled></div>
@@ -850,7 +857,7 @@ async function loadFamily(){
           '</div>'+
           '<div style="display:flex;justify-content:space-between;align-items:center;">'+
             '<span class="txt2" style="font-size:0.85rem;">'+m.birth_date+' &middot; '+m.zodiac_sign+'</span>'+
-            '<button class="btn btn-sec btn-sm" onclick="genHoroFor(\''+m.id+'\')" style="margin:0;padding:6px 14px;">&#128302; Гороскоп</button>'+
+            '<button class="btn btn-sec btn-sm" onclick="genHoroFor(\''+m.id+'\')" style="margin:0;padding:6px 14px;">&#128302; Получить гороскоп</button>'+
           '</div>'+
         '</div>';
       }).join('');
@@ -993,9 +1000,11 @@ function loadProfileScreen(){
   const genderSymbol=profile.gender==='male'?'&#9794; Мужской':'&#9792; Женский';
   document.getElementById('ed-gender').innerHTML=genderSymbol;
 
+  // Init date picker dropdowns
+  initBirthDatePicker(profile.birth_date);
+
   // Fields - read-only by default
   document.getElementById('ed-name').value=profile.name||'';
-  document.getElementById('ed-birthdate').value=profile.birth_date||'';
   document.getElementById('ed-time').value=formatBirthTime(profile.birth_time)||'';
   document.getElementById('ed-place').value=profile.birth_place||'';
   document.getElementById('ed-prof').value=profile.profession||'';
@@ -1013,8 +1022,8 @@ function loadProfileScreen(){
 }
 
 function setProfileFieldsDisabled(disabled){
-  ['ed-name','ed-birthdate','ed-time','ed-place','ed-prof','ed-email'].forEach(id=>{
-    document.getElementById(id).disabled=disabled;
+  ['ed-name','ed-birth-day','ed-birth-month','ed-birth-year','ed-time','ed-place','ed-prof','ed-email'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.disabled=disabled;
   });
   document.getElementById('profile-save-area').style.display=disabled?'none':'block';
   document.getElementById('btn-edit-profile').innerHTML=disabled?'&#9998; Изменить':'&#10005; Отмена';
@@ -1123,34 +1132,83 @@ async function saveInterests(){
   }catch(e){notify(e.message,'error');}
 }
 
+// Date picker helpers
+const monthNames=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+function initBirthDatePicker(dateStr){
+  const yearSel=document.getElementById('ed-birth-year');
+  const monthSel=document.getElementById('ed-birth-month');
+  const daySel=document.getElementById('ed-birth-day');
+  // Parse existing date
+  let y=1990,m=1,d=1;
+  if(dateStr){const p=dateStr.split('-');y=parseInt(p[0]);m=parseInt(p[1]);d=parseInt(p[2]);}
+  // Populate years (1920-2020, scroll to selected or 1990)
+  yearSel.innerHTML='';
+  for(let i=2020;i>=1920;i--){
+    const o=document.createElement('option');o.value=i;o.textContent=i;
+    if(i===y)o.selected=true;
+    yearSel.appendChild(o);
+  }
+  // Populate months
+  monthSel.innerHTML='';
+  monthNames.forEach((name,i)=>{
+    const o=document.createElement('option');o.value=i+1;o.textContent=name;
+    if(i+1===m)o.selected=true;
+    monthSel.appendChild(o);
+  });
+  // Populate days
+  updateBirthDays(d);
+}
+function updateBirthDays(selectDay){
+  const y=parseInt(document.getElementById('ed-birth-year').value)||1990;
+  const m=parseInt(document.getElementById('ed-birth-month').value)||1;
+  const daysInMonth=new Date(y,m,0).getDate();
+  const daySel=document.getElementById('ed-birth-day');
+  const curDay=selectDay||parseInt(daySel.value)||1;
+  daySel.innerHTML='';
+  for(let i=1;i<=daysInMonth;i++){
+    const o=document.createElement('option');o.value=i;o.textContent=i;
+    if(i===Math.min(curDay,daysInMonth))o.selected=true;
+    daySel.appendChild(o);
+  }
+  // Update hidden field
+  syncBirthDate();
+}
+function syncBirthDate(){
+  const y=document.getElementById('ed-birth-year').value;
+  const m=String(document.getElementById('ed-birth-month').value).padStart(2,'0');
+  const d=String(document.getElementById('ed-birth-day').value).padStart(2,'0');
+  document.getElementById('ed-birthdate').value=y+'-'+m+'-'+d;
+}
+
 async function saveProfile(){
   const b={};
   const v=id=>document.getElementById(id).value.trim();
-  // Frontend validation
+  // Frontend validation - required fields can't be empty
   const name=v('ed-name');
-  if(name){
-    if(name.length<2){notify('Имя: минимум 2 символа','error');return;}
-    if(name.length>50){notify('Имя: максимум 50 символов','error');return;}
-    b.name=name;
-  }
+  if(!name||name.length<2){notify('Имя обязательно (минимум 2 символа)','error');return;}
+  if(name.length>50){notify('Имя: максимум 50 символов','error');return;}
+  b.name=name;
+
+  syncBirthDate();
+  const birthDate=v('ed-birthdate');
+  if(!birthDate){notify('Дата рождения обязательна','error');return;}
+  b.birth_date=birthDate;
+
+  // Optional fields - empty = clear, non-empty = validate
   const place=v('ed-place');
-  if(place){
-    if(place.length>50){notify('Город: максимум 50 символов','error');return;}
-    b.birth_place=place;
-  }
+  if(place&&place.length>50){notify('Город: максимум 50 символов','error');return;}
+  b.birth_place=place||'';
+
   const prof=v('ed-prof');
-  if(prof){
-    if(prof.length>50){notify('Профессия: максимум 50 символов','error');return;}
-    b.profession=prof;
-  }
+  if(prof&&prof.length>50){notify('Профессия: максимум 50 символов','error');return;}
+  b.profession=prof||'';
+
   const email=v('ed-email');
   if(email){
     if(email.length>50){notify('Email: максимум 50 символов','error');return;}
     if(!email.match(/^[^@]+@[^@]+\.[^@]+$/)){notify('Некорректный email','error');return;}
-    b.email=email;
   }
-  const birthDate=v('ed-birthdate');
-  if(birthDate)b.birth_date=birthDate;
+  b.email=email||'';
   const timeVal=v('ed-time');
   if(timeVal){
     let formatted=timeVal.replace(/[^0-9:]/g,'');

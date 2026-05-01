@@ -129,22 +129,29 @@ async def update_my_profile(
 
     if update_data.birth_place is not None:
         place = update_data.birth_place.strip()
-        if len(place) > 200:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Birth place must be under 200 characters",
-            )
-        current_user.birth_place_encrypted = encrypt_pii(place)
+        if not place:
+            current_user.birth_place_encrypted = None
+        else:
+            if len(place) > 200:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Birth place must be under 200 characters",
+                )
+            current_user.birth_place_encrypted = encrypt_pii(place)
 
     if update_data.email is not None:
         email = update_data.email.strip().lower()
-        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid email format",
-            )
-        current_user.email_encrypted = encrypt_pii(email)
-        current_user.email_hash = hash_identifier(email)
+        if not email:
+            current_user.email_encrypted = None
+            current_user.email_hash = None
+        else:
+            if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid email format",
+                )
+            current_user.email_encrypted = encrypt_pii(email)
+            current_user.email_hash = hash_identifier(email)
 
     if update_data.profession is not None:
         prof = update_data.profession.strip()
