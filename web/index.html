@@ -1230,28 +1230,29 @@ function setProfileFieldsDisabled(disabled){
 function setFieldWithEmpty(inputId,value){
   const input=document.getElementById(inputId);
   const row=input.closest('.field-row');
-  // Remove any existing "Не заполнено" span
-  const existing=row.querySelector('.field-empty-text');
+  // Remove any existing display span
+  const existing=row.querySelector('.field-display-text');
   if(existing)existing.remove();
+  input.value=value||'';
+  input.style.display='none';
+  const span=document.createElement('span');
   if(value){
-    input.value=value;
-    input.style.display='';
+    span.className='field-display-text';
+    span.textContent=value;
+    span.style.cssText='padding:11px;font-size:0.95rem;flex:1;color:var(--txt);';
   }else{
-    input.value='';
-    input.style.display='none';
-    const span=document.createElement('span');
-    span.className='field-empty-text';
+    span.className='field-display-text field-empty-text';
     span.textContent='Не заполнено';
-    row.appendChild(span);
   }
+  row.appendChild(span);
 }
 
 function activateField(inputId){
   if(profileEditMode)return; // already editing
   profileEditMode=true;
   const input=document.getElementById(inputId);
-  // Remove "Не заполнено" spans and show all inputs
-  document.querySelectorAll('.field-empty-text').forEach(el=>el.remove());
+  // Remove all display text spans and show inputs
+  document.querySelectorAll('.field-display-text').forEach(el=>el.remove());
   ['ed-time','ed-place','ed-prof','ed-email'].forEach(id=>{
     document.getElementById(id).style.display='';
   });
@@ -1266,8 +1267,8 @@ function toggleEditProfile(){
     loadProfileScreen();
     return;
   }
-  // Remove "Не заполнено" spans and show all inputs
-  document.querySelectorAll('.field-empty-text').forEach(el=>el.remove());
+  // Remove all display text spans and show inputs
+  document.querySelectorAll('.field-display-text').forEach(el=>el.remove());
   ['ed-time','ed-place','ed-prof','ed-email'].forEach(id=>{
     document.getElementById(id).style.display='';
   });
